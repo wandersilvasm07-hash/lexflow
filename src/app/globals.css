@@ -1,26 +1,92 @@
 @import "tailwindcss";
+@import "@fontsource-variable/schibsted-grotesk";
 
+/*
+ * Sistema visual LexFlow
+ * - Verde-tinta (cor dos selos e carimbos oficiais) para estrutura e ações.
+ * - Papel frio, não creme: documentos administrativos, não papelaria.
+ * - Lacre (vermelho de selo) só para o que exige atenção humana: urgências,
+ *   encaminhamentos e ações destrutivas.
+ * Fonte auto-alojada (sem pedidos ao Google Fonts — RGPD).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --ink: #15302a;
+  --ink-soft: #234a40;
+  --ink-faint: #e3ece8;
+  --paper: #f4f6f5;
+  --surface: #ffffff;
+  --line: #d9e1dd;
+  --line-strong: #b9c6c0;
+  --text: #16201c;
+  --muted: #56645e;
+  --seal: #a3362a;
+  --seal-faint: #f8e9e6;
+  --ok: #2b6a3f;
+  --ok-faint: #e5f1e8;
+  --warn: #8a5a00;
+  --warn-faint: #fbf1dc;
+  --focus: #2f7d69;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-seal: var(--seal);
+  --color-seal-faint: var(--seal-faint);
+  --color-ok: var(--ok);
+  --color-ok-faint: var(--ok-faint);
+  --color-warn: var(--warn);
+  --color-warn-faint: var(--warn-faint);
+  --color-focus: var(--focus);
+  --font-sans: "Schibsted Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+
+  /* Escala tipográfica (razão ~1.25) */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.4rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.6rem;
+  --text-lg: 1.3125rem;
+  --text-lg--line-height: 1.8rem;
+  --text-xl: 1.75rem;
+  --text-xl--line-height: 2.15rem;
+  --text-2xl: 2.5rem;
+  --text-2xl--line-height: 2.8rem;
+  --text-3xl: 3.75rem;
+  --text-3xl--line-height: 3.9rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "tnum";
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

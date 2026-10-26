@@ -361,3 +361,13 @@ describe("auditoria", () => {
     expect(n).toBe(0);
   });
 });
+
+describe("endereços reservados", () => {
+  it("não permite criar escritório com endereço de rota da aplicação", async () => {
+    const u = await createUser();
+    await expectPgError(
+      asUser(u, (c) => c.query("select public.create_organization('Conta', 'conta')")),
+      /check constraint/,
+    );
+  });
+});

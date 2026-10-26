@@ -98,7 +98,10 @@ create table public.organizations (
   id              uuid primary key default gen_random_uuid(),
   name            text not null check (char_length(btrim(name)) between 2 and 120),
   slug            extensions.citext not null unique
-                  check (slug::text ~ '^[a-z0-9](?:[a-z0-9-]{1,46}[a-z0-9])$'),
+                  check (slug::text ~ '^[a-z0-9](?:[a-z0-9-]{1,46}[a-z0-9])$')
+                  -- Endereços reservados para rotas da aplicação (/app/conta, ...).
+                  check (slug::text not in ('conta', 'novo-escritorio', 'admin', 'api', 'auth',
+                                            'convite', 'definicoes', 'suporte', 'app')),
   legal_name      text check (legal_name is null or char_length(legal_name) <= 200),
   nif             text check (nif is null or nif ~ '^[0-9]{9}$'),
   email           text check (email is null or char_length(email) <= 254),
