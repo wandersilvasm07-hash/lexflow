@@ -307,3 +307,39 @@ describe("eliminação de contacto (RGPD)", () => {
     );
   });
 });
+
+describe("modo de simulação", () => {
+  it("permite simular mensagens recebidas e envios em modo simulação", async () => {
+    const res = await asUser(admin, async (c) =>
+      (
+        await c.query("select * from public.simulate_inbound_message($1, '+351910000050', 'Olá, preciso de ajuda', 'Teste')", [org])
+      ).rows[0],
+    );
+    expect(res.agent_should_reply).toBe(true);
+    await asUser(admin, (c) => c.query("select public.take_over_conversation($1)", [res.conversation_id]));
+    const msg = await asUser(admin, async (c) =>
+      (await c.query("select public.send_member_message($1, 'Bom dia') as id", [res.conversation_id])).rows[0].id,
+    );
+    await asUser(admin, (c) => c.query("select public.mark_simulated_sent($1)", [msg]));
+    const { rows } = await pool.query("select status from public.messages where id = $1", [msg]);
+    expect(rows[0].status).toBe("sent");
+  });
+
+  it("não funciona em contas reais nem sem permissão", async () => {
+    const assistant = await createUser();
+    await addMember(admin, org, assistant, "legal_assistant");
+    await expectPgError(
+      asUser(assistant, (c) => c.query("select * from public.simulate_inbound_message($1, '+351910000051', 'x')", [org])),
+      "forbidden",
+    );
+    await pool.query("update public.whatsapp_accounts set mode = 'live', token_secret_id = gen_random_uuid() where organization_id = $1", [org]);
+    try {
+      await expectPgError(
+        asUser(admin, (c) => c.query("select * from public.simulate_inbound_message($1, '+351910000052', 'x')", [org])),
+        "simulation_only",
+      );
+    } finally {
+      await pool.query("update public.whatsapp_accounts set mode = 'simulation', token_secret_id = null where organization_id = $1", [org]);
+    }
+  });
+});

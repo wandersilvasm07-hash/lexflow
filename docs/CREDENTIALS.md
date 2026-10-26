@@ -28,3 +28,17 @@ Em *Authentication › Email Templates*, usar links com `token_hash` (funciona e
 - Recuperar palavra-passe: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/redefinir-palavra-passe`
 
 Em *Authentication › Sign In / Providers*: ativar "Confirm email". Em *Multi-Factor*: ativar TOTP.
+
+## Variáveis de servidor da Fase 2 (Vercel › Settings › Environment Variables)
+
+| Variável | Para quê | Obrigatória para |
+|---|---|---|
+| `SUPABASE_SECRET_KEY` | Chave secreta do Supabase (`sb_secret_…`), só no servidor | Assistente de IA e webhook |
+| `ANTHROPIC_API_KEY` | Modelo de linguagem do assistente | Assistente de IA |
+| `ANTHROPIC_MODEL` | Opcional; por defeito `claude-sonnet-5-5` | — |
+| `WHATSAPP_APP_SECRET` | Verificar a assinatura dos webhooks da Meta | WhatsApp real |
+| `WHATSAPP_VERIFY_TOKEN` | Texto à escolha, igual ao configurado na Meta | WhatsApp real |
+| `WHATSAPP_ACCESS_TOKEN` | Token de sistema da app Meta | WhatsApp real |
+| `WHATSAPP_GRAPH_VERSION` | Opcional; versão da Graph API | — |
+
+Sem estas variáveis a aplicação continua a funcionar: o modo de simulação mostra as conversas, e a interface indica claramente o que falta.

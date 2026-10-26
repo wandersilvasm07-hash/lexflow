@@ -17,7 +17,20 @@ Regra: não se avança de fase sem testes e critérios de aceitação cumpridos.
 - [ ] **Falta:** correr o fluxo completo num projeto Supabase real (registo → escritório → convite → aceitar → MFA) e os E2E autenticados
 - [ ] **Falta:** SMTP próprio para emails de autenticação; envio automático de convites por email
 
-## Fase 2 — Atendimento
+## Fase 2 — Atendimento 🟡 (código pronto; falta ligar Meta e chave de IA)
+
+- [x] Base de dados: contactos, contas WhatsApp, conversas, mensagens, webhooks, notas, execuções do agente (RLS + RPC)
+- [x] Idempotência: webhooks e mensagens repetidas não duplicam (testado)
+- [x] Transferência humana: assumir pausa a IA na base de dados; reativar exige autorização (testado)
+- [x] Janela de 24h da Meta aplicada às respostas da equipa (testado)
+- [x] Webhook `/api/webhooks/whatsapp`: verificação de assinatura, estados de entrega, processamento assíncrono
+- [x] Envio pela Cloud API com tratamento de falhas; modo de simulação identificado
+- [x] Agente: prompt operacional, resposta estruturada, classificação, encaminhamento obrigatório determinístico
+- [x] Interface: WhatsApp IA (estado, simulador, pausar assistente), caixa de entrada, contactos
+- [ ] Credenciais reais: Meta (WhatsApp) e chave do modelo de IA + chave de serviço do Supabase na Vercel
+- [ ] Modelos de mensagem (templates) para escrever fora da janela de 24h
+
+Plano original:
 1. Migração: contactos, conversas, mensagens, webhooks, notas, `agent_runs` + testes RLS
 2. Interface `WhatsAppProvider` com implementação real (Cloud API) e simulação identificada
 3. Webhook: verificação de assinatura, idempotência por `event_id`/`message_id`, fila de processamento
