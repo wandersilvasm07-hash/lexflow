@@ -1,7 +1,7 @@
 import { APP } from "@/config/app";
 import { cn } from "@/components/ui";
 
-/** Marca provisória: um selo circular com a inicial, em verde-tinta. */
+/** Marca: um selo circular com a inicial P, em verde-tinta. */
 export function Logo({ inverted = false, className }: { inverted?: boolean; className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
@@ -15,7 +15,7 @@ export function Logo({ inverted = false, className }: { inverted?: boolean; clas
           strokeWidth="2"
         />
         <path
-          d="M12.5 10v12h8"
+          d="M12.5 22V10h4.5a3.5 3.5 0 0 1 0 7h-4.5"
           fill="none"
           stroke={inverted ? "#ffffff" : "var(--ink)"}
           strokeWidth="2.6"

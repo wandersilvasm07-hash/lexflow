@@ -1,8 +1,8 @@
-# LexFlow
+# Patrono
 
 Plataforma SaaS para escritórios de advocacia em Portugal: atendimento por WhatsApp com IA especializada em imigração, gestão de contactos e consultas, base jurídica com fontes e campanhas publicitárias assistidas — com controlo humano em todos os pontos críticos.
 
-> O nome "LexFlow" é provisório e muda-se em `src/config/app.ts`.
+> Nome do produto: **Patrono** (definido em `src/config/app.ts`). O repositório mantém o nome técnico `lexflow`.
 
 **Estado:** Fase 1 (fundação) implementada e testada. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
 
