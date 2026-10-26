@@ -42,6 +42,8 @@ export function getPublicEnv(): PublicEnv {
 
 /** URL pública da aplicação, usada em links de email (convites, recuperação). */
 export function getAppUrl(): string {
-  const url = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const url =
+    process.env.NEXT_PUBLIC_APP_URL ?? (vercel ? `https://${vercel}` : "http://localhost:3000");
   return url.replace(/\/$/, "");
 }
