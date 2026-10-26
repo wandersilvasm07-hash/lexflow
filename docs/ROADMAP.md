@@ -6,7 +6,7 @@ Regra: não se avança de fase sem testes e critérios de aceitação cumpridos.
 
 - [x] Projeto Next.js + TypeScript + Tailwind, lint, CI
 - [x] Migração de fundação: escritórios, membros, papéis, convites, perfis, auditoria, RLS
-- [x] Testes de isolamento e permissões contra Postgres real (33 testes)
+- [x] Testes de isolamento e permissões contra Postgres real (32 testes; 45 no total com os unitários, mais 18 E2E)
 - [x] Autenticação: registo, confirmação de email, login, recuperação, MFA TOTP, política MFA por escritório
 - [x] Criação de escritório, troca entre escritórios, endereços reservados
 - [x] Equipa: convites com link, papéis, suspender/reativar, remover, sair; último administrador protegido
