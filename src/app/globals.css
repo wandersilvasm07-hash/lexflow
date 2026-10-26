@@ -73,7 +73,6 @@ body {
   background: var(--paper);
   color: var(--text);
   font-family: var(--font-sans);
-  font-feature-settings: "ss01", "tnum";
 }
 
 :focus-visible {
