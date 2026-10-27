@@ -194,7 +194,7 @@ async function ConversationView({ ctx, id, backHref }: { ctx: OrgContext; id: st
     );
   }
 
-  const [{ data: messages }, { data: notes }, members] = await Promise.all([
+  const [{ data: messages }, { data: notes }, members, , { data: runs }] = await Promise.all([
     supabase
       .from("messages")
       .select("id, direction, author, author_user_id, body, status, error_code, created_at")
@@ -209,7 +209,26 @@ async function ConversationView({ ctx, id, backHref }: { ctx: OrgContext; id: st
       .order("created_at"),
     listMembers(ctx.org.id),
     supabase.rpc("mark_conversation_read", { p_conversation: id }),
+    supabase
+      .from("agent_runs")
+      .select("sources, created_at")
+      .eq("conversation_id", id)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
+
+  // Fontes jurídicas consultadas pelo assistente nesta conversa (secção 11).
+  const consulted = new Map<string, { title: string; version: number; cited: boolean }>();
+  for (const run of runs ?? []) {
+    for (const src of (run.sources as { document_id: string; title: string; version: number; cited: boolean }[]) ?? []) {
+      const prev = consulted.get(src.document_id);
+      consulted.set(src.document_id, {
+        title: src.title,
+        version: src.version,
+        cited: Boolean(prev?.cited || src.cited),
+      });
+    }
+  }
 
   const contact = conv.contacts as unknown as { full_name: string | null; phone_e164: string | null } | null;
   const simulation = (conv.whatsapp_accounts as unknown as { mode: string } | null)?.mode === "simulation";
@@ -248,7 +267,7 @@ async function ConversationView({ ctx, id, backHref }: { ctx: OrgContext; id: st
           />
         </div>
 
-        {conv.handoff_reason || conv.ai_summary ? (
+        {conv.handoff_reason || conv.ai_summary || consulted.size ? (
           <div className="space-y-2 border-b border-line bg-paper px-5 py-4 text-sm">
             {conv.handoff_reason ? (
               <p>
@@ -261,6 +280,24 @@ async function ConversationView({ ctx, id, backHref }: { ctx: OrgContext; id: st
                 <span className="font-semibold">Resumo do assistente: </span>
                 <span className="text-muted">{conv.ai_summary}</span>
               </p>
+            ) : null}
+            {consulted.size ? (
+              <div>
+                <span className="font-semibold">Fontes consultadas: </span>
+                <ul className="mt-1 space-y-0.5">
+                  {[...consulted.entries()].map(([docId, src]) => (
+                    <li key={docId}>
+                      <Link href={`/app/${ctx.org.slug}/base-juridica/${docId}`} className="underline underline-offset-2">
+                        {src.title}
+                      </Link>{" "}
+                      <span className="text-muted">
+                        (versão {src.version}
+                        {src.cited ? ", citada na resposta" : ", consultada"})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
           </div>
         ) : null}

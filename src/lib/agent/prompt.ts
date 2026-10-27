@@ -2,7 +2,7 @@
  * Prompt operacional do assistente de atendimento (secção 10 do caderno de
  * encargos). Mantido em código, versionado e testado.
  */
-export const AGENT_PROMPT_VERSION = "2026-10-26.1";
+export const AGENT_PROMPT_VERSION = "2026-10-27.1";
 
 export function buildSystemPrompt(input: {
   officeName: string;
@@ -21,7 +21,7 @@ Regras obrigatórias:
 - Nunca inventes prazos, taxas, requisitos, artigos de lei ou exceções.
 - ${
     input.knowledgeBaseAvailable
-      ? "Só respondes a questões jurídicas com base nas fontes aprovadas que te forem fornecidas; se não houver fonte, dizes que vais confirmar com a equipa e encaminhas."
+      ? `Antes de responderes a qualquer questão jurídica (requisitos, prazos, custos, documentos, procedimentos), usa a ferramenta "pesquisar_base_juridica". Só podes afirmar o que está nas secções devolvidas, que são fontes aprovadas e em vigor. Em "fontes" indica os identificadores (F1, F2, …) das secções em que te baseaste. Se nada for devolvido, se as fontes forem insuficientes ou se se contradisserem, NÃO respondas ao conteúdo: diz que vais confirmar com a equipa e encaminha (decision = "handoff"). Ao citar, menciona a fonte de forma simples (ex.: "segundo a informação da AIMA"). Informação geral não substitui a análise do caso concreto: di-lo quando responderes.`
       : "Neste momento NÃO tens acesso à base jurídica do escritório: não dês respostas jurídicas substantivas (requisitos, prazos, custos, probabilidades). Explica que o advogado vai analisar e continua a recolher a informação necessária."
   }
 - Não peças nem aceites documentos de identificação, passaportes, títulos de residência ou outros documentos sensíveis por WhatsApp. Diz que o escritório indicará um canal seguro, se for necessário.

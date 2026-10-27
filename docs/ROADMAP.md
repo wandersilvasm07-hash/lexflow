@@ -17,7 +17,7 @@ Regra: não se avança de fase sem testes e critérios de aceitação cumpridos.
 - [ ] **Falta:** correr o fluxo completo num projeto Supabase real (registo → escritório → convite → aceitar → MFA) e os E2E autenticados
 - [ ] **Falta:** SMTP próprio para emails de autenticação; envio automático de convites por email
 
-## Fase 2 — Atendimento 🟡 (código pronto; falta ligar Meta e chave de IA)
+## Fase 2 — Atendimento 🟡 (código pronto e migrado; falta ligar Meta e chave de IA)
 
 - [x] Base de dados: contactos, contas WhatsApp, conversas, mensagens, webhooks, notas, execuções do agente (RLS + RPC)
 - [x] Idempotência: webhooks e mensagens repetidas não duplicam (testado)
@@ -38,8 +38,20 @@ Plano original:
 5. Agente: prompt operacional (secção 10), perguntas progressivas, resumo, classificação (geral/consulta/complexo/urgente/pedido RGPD), pausa automática ao assumir
 6. Critérios: webhooks repetidos não duplicam; transferência suspende IA; falhas de API tratadas; IA não inventa fontes
 
-## Fase 3 — Base jurídica
-Importação PDF/DOCX/HTML/texto, segmentação, embeddings (`pgvector`), estados editoriais, vigência, revisão, base comum vs. privada, pesquisa com filtros antes da similaridade, registo de fontes por resposta. Conjunto de perguntas de teste **revisto por advogado**.
+## Fase 3 — Base jurídica 🟡 (código pronto; falta conteúdo aprovado e revisão do conjunto de teste)
+
+- [x] Documentos com todos os metadados da secção 9 (fonte, referências, publicação, vigência, verificação, versão, estado, revisor, aprovação, próxima revisão, etiquetas, relações)
+- [x] Base comum (gerida pela plataforma) separada dos documentos privados de cada escritório (RLS + testes)
+- [x] Fluxo editorial na base de dados: rascunho → em revisão → aprovado → desatualizado/arquivado; aprovar exige fonte e datas
+- [x] Versões: documento aprovado só muda por nova versão; ao aprovar a nova, a anterior fica desatualizada
+- [x] Pesquisa em português (sem acentos) que só devolve aprovados, em vigor e com revisão em dia
+- [x] Importação de PDF, DOCX, HTML, texto e de fontes oficiais por endereço (lista fechada de domínios)
+- [x] Interface: lista com filtros, ficha, ações editoriais, versões, "Testar pesquisa"
+- [x] Assistente pesquisa antes de responder, só cita o que recebeu (fontes inventadas bloqueiam a resposta), regista fontes e versões; caixa de entrada mostra as fontes consultadas
+- [x] Conjunto de perguntas de teste (`tests/legal/perguntas-teste.ts`) — **rascunho por rever por advogado**
+- [ ] Carregar e aprovar os primeiros documentos oficiais (trabalho de revisão jurídica)
+- [ ] Pesquisa semântica (embeddings): coluna `vector` preparada; falta escolher fornecedor de embeddings
+- [ ] Guardar o ficheiro original no armazenamento privado (hoje guarda-se o texto extraído e o hash)
 
 ## Fase 4 — Gestão
 CRM completo, agenda com prevenção de sobreposição na base de dados, IA que só propõe horários livres, relatórios de atendimento, exportações auditadas.

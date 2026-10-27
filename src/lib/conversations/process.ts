@@ -1,5 +1,5 @@
 import "server-only";
-import { runAgent, isAgentConfigured, type HistoryMessage } from "@/lib/agent/run";
+import { runAgent, isAgentConfigured, type HistoryMessage, type KnowledgeHit } from "@/lib/agent/run";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { providerFor, WhatsAppApiError } from "@/lib/whatsapp/provider";
 
@@ -38,7 +38,20 @@ export async function processConversation(conversationId: string): Promise<
 
   let result: Awaited<ReturnType<typeof runAgent>>;
   try {
-    result = await runAgent({ officeName, history });
+    result = await runAgent({
+      officeName,
+      history,
+      // Só fontes aprovadas, em vigor e com revisão em dia (filtro na base de dados).
+      search: async (query) => {
+        const { data, error: searchErr } = await admin.rpc("agent_search_knowledge", {
+          p_org: conv.organization_id,
+          p_query: query,
+          p_limit: 6,
+        });
+        if (searchErr) throw searchErr;
+        return (data ?? []) as KnowledgeHit[];
+      },
+    });
   } catch (err) {
     // Sem resposta da IA: passa a humanos, sem mensagem automática.
     await admin.rpc("record_ai_reply", {
@@ -59,7 +72,7 @@ export async function processConversation(conversationId: string): Promise<
     p_model: result.model,
     p_decision: d.decision,
     p_category: d.category,
-    p_sources: [],
+    p_sources: result.sources,
     p_summary: d.summary,
     p_handoff_reason: d.handoff_reason ?? null,
     p_input_tokens: result.inputTokens ?? null,

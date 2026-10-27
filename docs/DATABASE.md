@@ -32,7 +32,7 @@ Todas as tabelas de escritório têm `organization_id` + RLS `private.has_permis
 - `internal_notes` (conversation, autor, texto) — nunca enviadas ao cliente
 - `agent_runs` (conversation, modelo, fontes/versões consultadas, decisão, tokens) — rasto para revisão
 
-### Fase 3 — Base jurídica
+### Fase 3 — Base jurídica (implementado: `20261027000005_knowledge_base.sql`)
 - `knowledge_documents` (`organization_id` **nulo = base comum**, categoria, título, jurisdição, fonte oficial, referências, datas de publicação/vigência/fim/verificação/revisão, versão, estado editorial, revisor, aprovado_em)
 - `knowledge_chunks` (document, posição, texto, `embedding vector(…)`, metadados) com índice HNSW
 - `knowledge_relations` (documento ↔ conceito/etiqueta)

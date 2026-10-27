@@ -20,7 +20,7 @@ export function normalizeText(raw: string): string {
     .replace(/\r\n?/g, "\n")
     // remove caracteres de controlo (exceto \n e \t)
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
-    .replace(/ /g, " ")
+    .replace(/\u00A0/g, " ")
     .replace(/[ \t]+/g, " ")
     .replace(/ *\n */g, "\n")
     .replace(/\n{3,}/g, "\n\n")
