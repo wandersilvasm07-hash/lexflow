@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { getPublicEnv } from "@/lib/env";
 
 /**
@@ -11,6 +12,9 @@ import { getPublicEnv } from "@/lib/env";
 export async function createClient() {
   // Ler os cookies primeiro marca o pedido como dinâmico (nunca pré-renderizado).
   const cookieStore = await cookies();
+  // A biblioteca de autenticação lê o relógio (Date.now) ao carregar a sessão;
+  // `connection()` garante que isso só acontece em tempo de pedido.
+  await connection();
   const env = getPublicEnv();
 
   return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {

@@ -169,7 +169,23 @@ describe("base jurídica: pesquisa e fontes", () => {
     expect(r.decision.decision).toBe("handoff");
     expect(calls).toHaveLength(4);
     expect(calls[3].tools).toEqual(["responder"]);
-    expect(calls[3].tool_choice).toEqual({ type: "tool", name: "responder" });
+    // Os modelos atuais não aceitam forçar ferramentas: o pedido usa sempre "auto".
+    expect(calls.every((c) => JSON.stringify(c.tool_choice) === '{"type":"auto"}')).toBe(true);
+  });
+
+  it("se o modelo responder em texto livre, pede uma vez que use `responder` e nunca envia o texto", async () => {
+    const text = { type: "text", text: "Olá! Claro, basta ir à AIMA." } as unknown as Block;
+    const { client, calls } = fakeClient([[text], [responder({ reply: "Vou confirmar com a equipa.", decision: "handoff", handoff_reason: "x" })]]);
+    const r = await runAgent({ officeName: "E", history, client });
+    expect(calls).toHaveLength(2);
+    expect(JSON.stringify(calls[1].lastUser)).toContain("responder");
+    expect(r.decision.reply).toBe("Vou confirmar com a equipa.");
+  });
+
+  it("texto livre duas vezes seguidas é uma falha (a conversa vai para a equipa)", async () => {
+    const text = { type: "text", text: "Olá!" } as unknown as Block;
+    const { client } = fakeClient([[text]]);
+    await expect(runAgent({ officeName: "E", history, client })).rejects.toThrow("agent_invalid_output");
   });
 
   it("falha na pesquisa não é tratada como 'há fontes'", async () => {

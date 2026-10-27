@@ -277,6 +277,7 @@ export async function runAgent(input: {
   let inputTokens = 0;
   let outputTokens = 0;
   let decision: AgentDecision | null = null;
+  let nudged = false;
 
   for (let turn = 0; turn <= MAX_TOOL_TURNS && !decision; turn++) {
     const tools: Anthropic.Tool[] = [];
@@ -286,15 +287,17 @@ export async function runAgent(input: {
       if (input.scheduling && offered.size && bookings < MAX_BOOKINGS) tools.push(BOOK_TOOL);
     }
     tools.push(RESPONDER_TOOL);
-    const onlyRespond = tools.length === 1;
 
+    // Os modelos atuais não aceitam forçar uma ferramenta (tool_choice "any"/"tool"),
+    // por isso usa-se "auto" e, se o modelo responder em texto livre, pede-se
+    // uma única vez que use a ferramenta `responder`. Texto livre nunca é enviado.
     const res = await client.messages.create({
       model,
-      max_tokens: 900,
+      max_tokens: 1500,
       system,
       messages,
       tools,
-      tool_choice: onlyRespond ? { type: "tool", name: "responder" } : { type: "any" },
+      tool_choice: { type: "auto" },
     });
     inputTokens += res.usage?.input_tokens ?? 0;
     outputTokens += res.usage?.output_tokens ?? 0;
@@ -310,7 +313,16 @@ export async function runAgent(input: {
 
     const allowed = new Set(tools.map((t) => t.name));
     const calls = toolUses.filter((b) => allowed.has(b.name));
-    if (!calls.length) throw new Error("agent_invalid_output");
+    if (!calls.length) {
+      if (nudged || toolUses.length) throw new Error("agent_invalid_output");
+      nudged = true;
+      messages.push({ role: "assistant", content: res.content });
+      messages.push({
+        role: "user",
+        content: "[Sistema] A resposta ao contacto tem de ser dada através da ferramenta `responder`. Usa-a agora.",
+      });
+      continue;
+    }
 
     messages.push({ role: "assistant", content: res.content });
     const results: Anthropic.ToolResultBlockParam[] = [];

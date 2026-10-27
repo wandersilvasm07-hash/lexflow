@@ -35,7 +35,9 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
   const supabase = await createClient();
 
   const range = periodRange(period as "7" | "30" | "90", ctx.org.timezone);
-  const [members, invites, factors, report] = await Promise.all([
+  const headCount = (table: string) =>
+    supabase.from(table).select("id", { count: "exact", head: true }).eq("organization_id", ctx.org.id);
+  const [members, invites, factors, report, services, rules, aiRuns] = await Promise.all([
     supabase
       .from("memberships")
       .select("id", { count: "exact", head: true })
@@ -50,6 +52,9 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
       : Promise.resolve({ count: 0 }),
     supabase.auth.mfa.listFactors(),
     can(ctx, "reports.read") ? getReport(ctx.org.id, range.from, range.to) : Promise.resolve(null),
+    can(ctx, "calendar.read") ? headCount("services") : Promise.resolve({ count: 0 }),
+    can(ctx, "calendar.read") ? headCount("availability_rules") : Promise.resolve({ count: 0 }),
+    can(ctx, "conversations.read") ? headCount("agent_runs").neq("decision", "error") : Promise.resolve({ count: 0 }),
   ]);
 
   const profileComplete = Boolean(ctx.org.legal_name && ctx.org.nif && ctx.org.email);
@@ -80,18 +85,25 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
       available: true,
     },
     {
-      done: false,
-      title: "Ligar o WhatsApp Business",
-      text: "Disponível na fase 2.",
-      href: null,
-      available: false,
+      done: (services.count ?? 0) > 0 && (rules.count ?? 0) > 0,
+      title: "Configurar a agenda",
+      text: "Serviços e horários de atendimento, para o assistente poder marcar consultas.",
+      href: `${base}/agenda/definicoes`,
+      available: can(ctx, "calendar.write"),
+    },
+    {
+      done: (aiRuns.count ?? 0) > 0,
+      title: "Testar o assistente",
+      text: "Simule uma mensagem de um cliente e veja a resposta na caixa de entrada.",
+      href: `${base}/whatsapp`,
+      available: can(ctx, "whatsapp.manage"),
     },
     {
       done: false,
-      title: "Rever a base jurídica",
-      text: "Disponível na fase 3.",
-      href: null,
-      available: false,
+      title: "Ligar o WhatsApp Business real",
+      text: "Precisa de conta Meta Business verificada e de um número dedicado.",
+      href: `${base}/whatsapp`,
+      available: can(ctx, "whatsapp.manage"),
     },
   ];
 
