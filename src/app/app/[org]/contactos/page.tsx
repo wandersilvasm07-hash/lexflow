@@ -1,22 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PermissionDenied } from "@/components/shell/module-placeholder";
-import { Badge, EmptyState, Input, PageHeader, Panel, Select, Table, Td, Th, buttonClass } from "@/components/ui";
+import { Alert, Badge, ButtonLink, EmptyState, Input, PageHeader, Panel, Select, Table, Td, Th, buttonClass } from "@/components/ui";
 import { can, getOrgContext } from "@/lib/auth/dal";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { t } from "@/i18n";
-import { CONTACT_STATUS, StatusSelect } from "./contact-forms";
+import { CONTACT_SOURCE, CONTACT_STATUS } from "@/lib/crm";
+import { StatusSelect } from "./contact-forms";
 
 export const metadata: Metadata = { title: t.nav.contacts };
 
-const SOURCE: Record<string, string> = {
-  whatsapp: "WhatsApp",
-  ads: "Anúncio",
-  form: "Formulário",
-  referral: "Recomendação",
-  manual: "Manual",
-};
+const SOURCE: Record<string, string> = CONTACT_SOURCE;
 
 const PAGE_SIZE = 50;
 
@@ -50,7 +45,28 @@ export default async function ContactsPage({ params, searchParams }: PageProps<"
 
   return (
     <>
-      <PageHeader title="Contactos e CRM" description="Potenciais clientes e o estado de cada um." />
+      <PageHeader
+        title="Contactos e CRM"
+        description="Potenciais clientes e o estado de cada um."
+        actions={
+          <>
+            {can(ctx, "contacts.export") ? (
+              <a
+                href={`${base}/exportar?${new URLSearchParams({ ...(search && { q: search }), ...(status && { estado: status }) })}`}
+                className={buttonClass("secondary")}
+              >
+                Exportar CSV
+              </a>
+            ) : null}
+            {can(ctx, "contacts.write") ? <ButtonLink href={`${base}/novo`}>Novo contacto</ButtonLink> : null}
+          </>
+        }
+      />
+      {sp.eliminado ? (
+        <Alert tone="ok" className="mb-4">
+          Os dados do contacto foram eliminados. A eliminação ficou no registo de atividade.
+        </Alert>
+      ) : null}
       <Panel>
         <form className="flex flex-wrap items-center gap-2 border-b border-line p-3" role="search">
           <Input name="q" defaultValue={search} placeholder="Pesquisar nome, telefone ou email" aria-label="Pesquisar" className="h-9 max-w-xs" />
@@ -87,7 +103,9 @@ export default async function ContactsPage({ params, searchParams }: PageProps<"
               {data.map((c) => (
                 <tr key={c.id}>
                   <Td>
-                    <p className="font-medium">{c.full_name ?? "Sem nome"}</p>
+                    <Link href={`${base}/${c.id}`} className="font-medium hover:underline">
+                      {c.full_name ?? "Sem nome"}
+                    </Link>
                     <p className="text-xs text-muted">{c.phone_e164 ?? c.email}</p>
                   </Td>
                   <Td>

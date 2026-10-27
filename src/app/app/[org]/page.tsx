@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, Panel, PanelHeader, cn } from "@/components/ui";
 import { can, getOrgContext } from "@/lib/auth/dal";
+import { getReport, periodRange, type Report } from "@/lib/data/reports";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -13,18 +14,18 @@ const PERIODS = [
   { value: "90", label: "90 dias" },
 ] as const;
 
-/** Indicadores do dashboard e o módulo que os alimenta. */
-const METRICS: { label: string; source: string }[] = [
-  { label: "Novas conversas", source: "WhatsApp" },
-  { label: "Atendidas pela IA", source: "WhatsApp" },
-  { label: "Pendentes", source: "Caixa de entrada" },
-  { label: "Encaminhadas para humanos", source: "Caixa de entrada" },
-  { label: "Novos potenciais clientes", source: "Contactos" },
-  { label: "Consultas marcadas", source: "Agenda" },
-  { label: "Campanhas ativas", source: "Meta Ads" },
-  { label: "Investimento publicitário", source: "Meta Ads" },
-  { label: "Contactos vindos de anúncios", source: "Meta Ads" },
-  { label: "Custo por contacto", source: "Meta Ads + Contactos" },
+/** Indicadores do dashboard, de onde vêm e (quando já existem) o valor calculado. */
+const METRICS: { label: string; source: string; value?: (r: Report) => number }[] = [
+  { label: "Novas conversas", source: "WhatsApp", value: (r) => r.conversations_new },
+  { label: "Atendidas pela IA", source: "WhatsApp", value: (r) => r.conversations_ai_attended },
+  { label: "Pendentes agora", source: "Caixa de entrada", value: (r) => r.conversations_pending_now },
+  { label: "Encaminhadas para humanos", source: "Caixa de entrada", value: (r) => r.conversations_handed_off },
+  { label: "Novos potenciais clientes", source: "Contactos", value: (r) => r.contacts_new },
+  { label: "Consultas marcadas", source: "Agenda", value: (r) => r.appointments_booked },
+  { label: "Campanhas ativas", source: "Meta Ads (fase 5)" },
+  { label: "Investimento publicitário", source: "Meta Ads (fase 5)" },
+  { label: "Contactos vindos de anúncios", source: "Meta Ads (fase 5)" },
+  { label: "Custo por contacto", source: "Meta Ads (fase 5)" },
 ];
 
 export default async function DashboardPage({ params, searchParams }: PageProps<"/app/[org]">) {
@@ -33,7 +34,8 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
   const period = PERIODS.find((p) => p.value === sp.periodo)?.value ?? "30";
   const supabase = await createClient();
 
-  const [members, invites, factors] = await Promise.all([
+  const range = periodRange(period as "7" | "30" | "90", ctx.org.timezone);
+  const [members, invites, factors, report] = await Promise.all([
     supabase
       .from("memberships")
       .select("id", { count: "exact", head: true })
@@ -47,6 +49,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
           .is("revoked_at", null)
       : Promise.resolve({ count: 0 }),
     supabase.auth.mfa.listFactors(),
+    can(ctx, "reports.read") ? getReport(ctx.org.id, range.from, range.to) : Promise.resolve(null),
   ]);
 
   const profileComplete = Boolean(ctx.org.legal_name && ctx.org.nif && ctx.org.email);
@@ -123,7 +126,11 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
         <Panel>
           <PanelHeader
             title={`Indicadores · últimos ${period} dias`}
-            description="Os valores aparecem quando os módulos de origem estiverem ligados. Não mostramos números de demonstração."
+            description={
+              report
+                ? "Calculados a partir das conversas, contactos e agenda do escritório. Os indicadores de publicidade chegam com a ligação à Meta."
+                : "O seu papel não inclui relatórios. Os indicadores ficam visíveis para quem tem acesso a relatórios."
+            }
           />
           <dl className="grid grid-cols-1 sm:grid-cols-2">
             {METRICS.map((m, i) => (
@@ -137,9 +144,13 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
               >
                 <dt className="text-sm text-muted">{m.label}</dt>
                 <dd className="mt-1 flex items-baseline justify-between gap-2">
-                  <span className="text-xl font-semibold text-line-strong" aria-label="Sem dados">
-                    —
-                  </span>
+                  {report && m.value ? (
+                    <span className="text-xl font-semibold tabular-nums">{m.value(report).toLocaleString("pt-PT")}</span>
+                  ) : (
+                    <span className="text-xl font-semibold text-line-strong" aria-label="Sem dados">
+                      —
+                    </span>
+                  )}
                   <span className="text-xs text-muted">Origem: {m.source}</span>
                 </dd>
               </div>

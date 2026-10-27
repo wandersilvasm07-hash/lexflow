@@ -53,8 +53,19 @@ Plano original:
 - [ ] Pesquisa semântica (embeddings): coluna `vector` preparada; falta escolher fornecedor de embeddings
 - [ ] Guardar o ficheiro original no armazenamento privado (hoje guarda-se o texto extraído e o hash)
 
-## Fase 4 — Gestão
-CRM completo, agenda com prevenção de sobreposição na base de dados, IA que só propõe horários livres, relatórios de atendimento, exportações auditadas.
+## Fase 4 — Gestão ✅ (código, testes e migração) · falta configurar serviços e horários reais
+
+- [x] Agenda: serviços, horário semanal por profissional (vários períodos por dia), ausências, fuso do escritório
+- [x] Marcações sem sobreposição garantidas na base de dados (restrição de exclusão; testado com pedidos em simultâneo)
+- [x] Horários livres calculados a partir da disponibilidade real; antecedência mínima por serviço
+- [x] Assistente propõe só horários livres e marca só com confirmação explícita; só anuncia o que ficou gravado (testado)
+- [x] Estados: marcada, confirmada, cancelada (liberta o horário), realizada, falta; marcar fora do horário sem sobreposição
+- [x] CRM: ficha do contacto, responsável, próxima ação, etiquetas, notas internas restritas, histórico de conversas e consultas, consentimentos, criação manual
+- [x] Exportação CSV com permissão própria, campos mínimos, proteção contra fórmulas e registo de atividade
+- [x] Eliminação de contacto (RGPD) com motivo, a partir da ficha
+- [x] Relatórios agregados por período (atendimento, contactos, consultas); dashboard com números reais
+- [ ] Integração com Google Calendar / Outlook (prevista; fora desta fase)
+- [ ] Lembretes de consulta por WhatsApp (exigem modelos aprovados pela Meta)
 
 ## Fase 5 — Publicidade
 Assistente de campanha (13 passos), revisão de conformidade, pré-visualização, aprovação explícita registada, publicação idempotente na Meta, confirmação do estado real, limites e alertas de orçamento, relatórios com atribuição e limitações declaradas.
