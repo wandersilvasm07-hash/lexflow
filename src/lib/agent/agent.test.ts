@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 const { detectMandatoryHandoff, buildSystemPrompt } = await import("./prompt");
-const { enforceSafety, toModelMessages, runAgent, enforceSources, formatHits, enforceBookingClaims } = await import("./run");
+const { enforceSafety, toModelMessages, runAgent, enforceSources, formatHits, enforceBookingClaims, enforceDisclosure, AI_DISCLOSURE } =
+  await import("./run");
 
 const base = {
   reply: "Pode dizer-me se já está em Portugal?",
@@ -179,7 +180,8 @@ describe("base jurídica: pesquisa e fontes", () => {
     const r = await runAgent({ officeName: "E", history, client });
     expect(calls).toHaveLength(2);
     expect(JSON.stringify(calls[1].lastUser)).toContain("responder");
-    expect(r.decision.reply).toBe("Vou confirmar com a equipa.");
+    expect(r.decision.reply.startsWith("Vou confirmar com a equipa.")).toBe(true);
+    expect(r.decision.reply).not.toContain("Olá!");
   });
 
   it("texto livre duas vezes seguidas é uma falha (a conversa vai para a equipa)", async () => {
@@ -356,5 +358,57 @@ describe("agenda: propor e marcar consultas", () => {
     expect(withAgenda).toContain("Nunca inventes datas");
     const without = buildSystemPrompt({ officeName: "X", knowledgeBaseAvailable: false, nowIso: "2026-10-27T00:00:00Z" });
     expect(without).toContain("não proponhas datas");
+  });
+});
+
+describe("transparência sobre IA (Regulamento Europeu da IA, art. 50.º)", () => {
+  const d = { reply: "Olá, boa tarde! Em que posso ajudar?", decision: "asked" as const, category: "general" as const, summary: "s", fontes: [] };
+
+  it("acrescenta a informação na primeira resposta se o modelo se esquecer", () => {
+    expect(enforceDisclosure(d, true).reply).toContain(AI_DISCLOSURE);
+  });
+
+  it("não repete quando o modelo já informou", () => {
+    const ok = { ...d, reply: "Olá! Este atendimento é feito com apoio de inteligência artificial." };
+    expect(enforceDisclosure(ok, true).reply).toBe(ok.reply);
+  });
+
+  it("não acrescenta nas respostas seguintes", () => {
+    expect(enforceDisclosure(d, false).reply).toBe(d.reply);
+  });
+
+  it("o texto obrigatório não usa palavras que os clientes rejeitam", () => {
+    expect(AI_DISCLOSURE).not.toMatch(/rob[oô]|\bbot\b|autom[aá]tic|assistente virtual/i);
+  });
+
+  it("o prompt proíbe essas palavras e pede a informação só na primeira resposta", () => {
+    const p = buildSystemPrompt({ officeName: "E", knowledgeBaseAvailable: false, nowIso: "2026-10-27T00:00:00Z" });
+    expect(p).toMatch(/inteligência artificial/);
+    expect(p).toMatch(/Nunca uses as palavras "robô", "bot", "automático", "assistente virtual"/);
+    expect(p).not.toMatch(/És o assistente virtual/);
+  });
+
+  it("a primeira resposta real do agente inclui sempre a informação, mesmo após encaminhamento forçado", async () => {
+    const client = {
+      messages: {
+        create: (async () => ({
+          content: [{ type: "tool_use", id: "r", name: "responder", input: { reply: "Olá!", decision: "asked", category: "general", summary: "s" } }],
+          usage: { input_tokens: 1, output_tokens: 1 },
+        })) as never,
+      },
+    };
+    const first = await runAgent({ officeName: "E", history: [{ author: "contact", body: "Recebi uma notificação para abandonar o país" }], client });
+    expect(first.decision.decision).toBe("handoff");
+    expect(first.decision.reply).toContain(AI_DISCLOSURE);
+    const second = await runAgent({
+      officeName: "E",
+      history: [
+        { author: "contact", body: "Olá" },
+        { author: "ai", body: "Olá! " + AI_DISCLOSURE },
+        { author: "contact", body: "Obrigado" },
+      ],
+      client,
+    });
+    expect(second.decision.reply).not.toContain(AI_DISCLOSURE);
   });
 });

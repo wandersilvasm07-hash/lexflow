@@ -84,7 +84,7 @@ export async function processConversation(conversationId: string): Promise<
       p_body: null,
       p_model: process.env.ANTHROPIC_MODEL ?? "desconhecido",
       p_decision: "handoff",
-      p_handoff_reason: "O assistente automático não conseguiu responder; precisa de atenção da equipa.",
+      p_handoff_reason: "O assistente de IA não conseguiu responder; precisa de atenção da equipa.",
     });
     console.error("[agent] falhou", (err as Error).message);
     return { ok: false, error: "agent_failed" };

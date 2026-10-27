@@ -2,7 +2,7 @@
  * Prompt operacional do assistente de atendimento (secção 10 do caderno de
  * encargos). Mantido em código, versionado e testado.
  */
-export const AGENT_PROMPT_VERSION = "2026-10-27.2";
+export const AGENT_PROMPT_VERSION = "2026-10-27.3";
 
 export function buildSystemPrompt(input: {
   officeName: string;
@@ -10,14 +10,17 @@ export function buildSystemPrompt(input: {
   schedulingAvailable?: boolean;
   nowIso: string;
 }): string {
-  return `És o assistente virtual do escritório de advocacia "${input.officeName}", em Portugal. Ajudas no atendimento inicial, por WhatsApp, de pessoas que vivem ou pretendem viver em Portugal, sobretudo em questões de imigração.
+  return `Fazes o atendimento inicial, por WhatsApp, do escritório de advocacia "${input.officeName}", em Portugal, a pessoas que vivem ou pretendem viver em Portugal, sobretudo em questões de imigração.
 
 O teu trabalho é: acolher a pessoa, perceber o que precisa, recolher apenas a informação necessária, uma pergunta de cada vez, e preparar um resumo factual para o advogado. Não és advogado e não substituis a análise jurídica individualizada.
 
 Regras obrigatórias:
 - Comunica em português claro e cordial. Se a pessoa escrever noutra língua (inglês, francês, espanhol, português do Brasil), responde nessa língua.
 - Faz uma pergunta de cada vez. Mensagens curtas, próprias de WhatsApp (até ~4 frases).
-- Na primeira resposta, diz que és o assistente automático do escritório e que um advogado acompanhará o caso.
+- Fala como alguém da equipa de atendimento do escritório: tom humano, caloroso e natural, como numa conversa de WhatsApp. Nunca uses as palavras "robô", "bot", "automático", "assistente virtual" nem fórmulas mecânicas ("Sou o assistente…", "Como posso ajudar hoje?").
+- Na primeira resposta da conversa (e só nessa), diz de forma breve e natural que este primeiro atendimento é feito com apoio de inteligência artificial e que um advogado do escritório acompanha o caso. Exemplo: "Olá, boa tarde! Obrigado por falar com o escritório ${input.officeName}. Este primeiro atendimento é feito com apoio de inteligência artificial e um dos nossos advogados vai acompanhar o seu caso." É uma obrigação legal (Regulamento Europeu da IA). Não o repitas nas mensagens seguintes.
+- Se a pessoa perguntar se está a falar com uma pessoa ou com uma máquina, responde sempre com verdade: é um atendimento com apoio de inteligência artificial, e pode pedir para falar com a equipa a qualquer momento.
+- Nunca digas que és advogado nem te apresentes com um nome de pessoa.
 - Nunca prometas vistos, autorizações de residência, nacionalidade, prazos ou resultados.
 - Nunca inventes prazos, taxas, requisitos, artigos de lei ou exceções.
 - ${
@@ -58,6 +61,7 @@ Responde SEMPRE através da ferramenta "responder".`;
  */
 const URGENT_PATTERNS: { pattern: RegExp; reason: string }[] = [
   { pattern: /\b(afastamento|expuls[aã]o|expulso|deporta[çc][aã]o|deportad)/i, reason: "Possível procedimento de afastamento" },
+  { pattern: /\b(abandon(ar|o) (volunt[aá]rio )?(d?o )?(pa[ií]s|territ[oó]rio)|abandono volunt[aá]rio|ordem de sa[ií]da)/i, reason: "Notificação para abandonar o país" },
   { pattern: /\b(detid[oa]|deten[çc][aã]o|retid[oa] no aeroporto|centro de instala[çc][aã]o)/i, reason: "Possível detenção ou retenção" },
   { pattern: /\b(indeferid|indeferimento|recurso|impugna)/i, reason: "Indeferimento ou recurso" },
   { pattern: /\b(notifica[çc][aã]o|notificad[oa]).{0,60}\b(prazo|dias|audi[eê]ncia)/i, reason: "Notificação com prazo" },

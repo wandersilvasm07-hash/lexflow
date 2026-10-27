@@ -86,6 +86,22 @@ export function enforceSources(decision: AgentDecision, retrieved: ReadonlyMap<s
   };
 }
 
+/**
+ * Transparência (Regulamento Europeu da IA, art. 50.º, n.º 1, em vigor desde
+ * 2 de agosto de 2026): quem fala com um sistema de IA tem de ser informado.
+ * Fazemo-lo uma única vez, na primeira resposta, de forma natural, sem
+ * "robô", "bot" ou "assistente automático". Se o modelo se esquecer, a frase
+ * é acrescentada aqui. Nas mensagens seguintes não se repete.
+ */
+export const AI_DISCLOSURE =
+  "Este primeiro atendimento é feito com apoio de inteligência artificial e um advogado do escritório acompanha o seu caso.";
+const DISCLOSURE_RE = /intelig[eê]ncia artificial|artificial intelligence|intelligence artificielle|inteligencia artificial|\bIA\b|\bAI\b/i;
+
+export function enforceDisclosure(decision: AgentDecision, isFirstReply: boolean): AgentDecision {
+  if (!isFirstReply || !decision.reply.trim() || DISCLOSURE_RE.test(decision.reply)) return decision;
+  return { ...decision, reply: `${decision.reply.trim()}\n\n${AI_DISCLOSURE}` };
+}
+
 export function isAgentConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
 }
@@ -424,7 +440,11 @@ export async function runAgent(input: {
   if (!decision) throw new Error("agent_invalid_output");
 
   const lastContact = [...input.history].reverse().find((m) => m.author === "contact")?.body ?? "";
-  const checked = enforceSafety(enforceBookingClaims(enforceSources(decision, retrieved), Boolean(booking)), lastContact);
+  const isFirstReply = !input.history.some((m) => m.author === "ai" || m.author === "member");
+  const checked = enforceDisclosure(
+    enforceSafety(enforceBookingClaims(enforceSources(decision, retrieved), Boolean(booking)), lastContact),
+    isFirstReply,
+  );
   const cited = new Set(checked.fontes ?? []);
 
   const sources: SourceRecord[] = [...retrieved.entries()].map(([ref, { hit, query }]) => ({
