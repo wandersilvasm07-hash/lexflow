@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 const { detectMandatoryHandoff, buildSystemPrompt } = await import("./prompt");
-const { enforceSafety, toModelMessages, runAgent, enforceSources, formatHits } = await import("./run");
+const { enforceSafety, toModelMessages, runAgent, enforceSources, formatHits, enforceBookingClaims } = await import("./run");
 
 const base = {
   reply: "Pode dizer-me se já está em Portugal?",
@@ -209,5 +209,136 @@ describe("base jurídica: pesquisa e fontes", () => {
     const p = buildSystemPrompt({ officeName: "X", knowledgeBaseAvailable: true, nowIso: "2026-10-27T00:00:00Z" });
     expect(p).toContain("pesquisar_base_juridica");
     expect(p).toContain("NÃO respondas ao conteúdo");
+  });
+});
+
+describe("agenda: propor e marcar consultas", () => {
+  type Block = { type: "tool_use"; id: string; name: string; input: unknown };
+  function scripted(script: Block[][]) {
+    const calls: { tools: string[]; lastUser: unknown }[] = [];
+    let i = 0;
+    return {
+      calls,
+      client: {
+        messages: {
+          create: (async (req: { tools: { name: string }[]; messages: { content: unknown }[] }) => {
+            calls.push({ tools: req.tools.map((t) => t.name), lastUser: req.messages[req.messages.length - 1]?.content });
+            return { content: script[Math.min(i++, script.length - 1)], usage: { input_tokens: 1, output_tokens: 1 } };
+          }) as never,
+        },
+      },
+    };
+  }
+  const tool = (name: string, input: unknown = {}, id = name): Block => ({ type: "tool_use", id, name, input });
+  const reply = (input: Record<string, unknown>) => tool("responder", { category: "consultation", summary: "Quer marcar.", ...input });
+  const slots = [
+    { service_id: "svc", service_name: "Consulta de imigração", starts_at: "2026-11-03T10:00:00Z", ends_at: "2026-11-03T11:00:00Z" },
+    { service_id: "svc", service_name: "Consulta de imigração", starts_at: "2026-11-03T14:30:00Z", ends_at: "2026-11-03T15:30:00Z" },
+  ];
+  const history = [{ author: "contact" as const, body: "Pode ser terça às 10h, chamo-me Ana" }];
+
+  function scheduling(bookImpl?: (s: string, at: string, n: string | null) => Promise<never | object>) {
+    const booked: { service: string; at: string; name: string | null }[] = [];
+    return {
+      booked,
+      deps: {
+        timezone: "Europe/Lisbon",
+        freeSlots: async () => slots,
+        book: async (service: string, at: string, name: string | null) => {
+          if (bookImpl) await bookImpl(service, at, name);
+          booked.push({ service, at, name });
+          return { appointment_id: "apt-1", starts_at: at, ends_at: at, professional_name: "Dra. Sofia", service_name: "Consulta de imigração" };
+        },
+      },
+    };
+  }
+
+  it("só marca horários devolvidos pela agenda, e só depois anuncia", async () => {
+    const sch = scheduling();
+    const { client, calls } = scripted([
+      [tool("ver_horarios_livres")],
+      [tool("marcar_consulta", { horario: "H1", nome: "Ana" })],
+      [reply({ reply: "Está marcada para terça, 3 de novembro, às 10:00.", decision: "answered" })],
+    ]);
+    const r = await runAgent({ officeName: "E", history, client, scheduling: sch.deps });
+    expect(sch.booked).toEqual([{ service: "svc", at: "2026-11-03T10:00:00Z", name: "Ana" }]);
+    expect(r.booking?.appointment_id).toBe("apt-1");
+    expect(r.decision.decision).toBe("answered");
+    // A lista de horários chega ao modelo formatada em português, no fuso de Lisboa.
+    expect(JSON.stringify(calls[1].lastUser)).toMatch(/\[H1\] terça-feira, 3 de novembro.*10:00/);
+    // marcar_consulta só aparece depois de ver os horários.
+    expect(calls[0].tools).not.toContain("marcar_consulta");
+    expect(calls[1].tools).toContain("marcar_consulta");
+  });
+
+  it("horário inventado não é marcado", async () => {
+    const sch = scheduling();
+    const { client, calls } = scripted([
+      [tool("ver_horarios_livres")],
+      [tool("marcar_consulta", { horario: "H9" })],
+      [reply({ reply: "Vou confirmar com a equipa.", decision: "handoff", handoff_reason: "Sem horário" })],
+    ]);
+    await runAgent({ officeName: "E", history, client, scheduling: sch.deps });
+    expect(sch.booked).toHaveLength(0);
+    expect(JSON.stringify(calls[2].lastUser)).toContain("Nada foi marcado");
+  });
+
+  it("se o horário ficar ocupado entretanto, nada é anunciado como marcado", async () => {
+    const sch = scheduling(async () => {
+      throw new Error("slot_unavailable");
+    });
+    const { client, calls } = scripted([
+      [tool("ver_horarios_livres")],
+      [tool("marcar_consulta", { horario: "H1" })],
+      [reply({ reply: "A sua consulta está marcada para terça às 10:00.", decision: "answered" })],
+    ]);
+    const r = await runAgent({ officeName: "E", history, client, scheduling: sch.deps });
+    expect(JSON.stringify(calls[2].lastUser)).toContain("acabou de ficar ocupado");
+    expect(r.booking).toBeNull();
+    // O modelo tentou anunciar a marcação mesmo assim: é bloqueado.
+    expect(r.decision.decision).toBe("handoff");
+    expect(r.decision.reply).not.toMatch(/marcada/);
+  });
+
+  it("anunciar uma marcação sem ter marcado é bloqueado", () => {
+    const d = { reply: "Ficou marcada para amanhã às 9h.", decision: "answered" as const, category: "consultation" as const, summary: "x", fontes: [] };
+    expect(enforceBookingClaims(d, false).decision).toBe("handoff");
+    expect(enforceBookingClaims(d, true).decision).toBe("answered");
+    const negative = { ...d, reply: "Ainda não está marcada; qual destes horários prefere?" };
+    expect(enforceBookingClaims(negative, false).decision).toBe("answered");
+  });
+
+  it("sem horários livres, o modelo é instruído a não propor datas", async () => {
+    const { client, calls } = scripted([
+      [tool("ver_horarios_livres")],
+      [reply({ reply: "A equipa vai contactá-la para agendar.", decision: "handoff", handoff_reason: "Sem vagas" })],
+    ]);
+    await runAgent({
+      officeName: "E",
+      history,
+      client,
+      scheduling: { timezone: "Europe/Lisbon", freeSlots: async () => [], book: async () => { throw new Error("x"); } },
+    });
+    expect(JSON.stringify(calls[1].lastUser)).toContain("Não proponhas datas");
+  });
+
+  it("só uma marcação por resposta", async () => {
+    const sch = scheduling();
+    const { client, calls } = scripted([
+      [tool("ver_horarios_livres")],
+      [tool("marcar_consulta", { horario: "H1" })],
+      [reply({ reply: "Está marcada.", decision: "answered" })],
+    ]);
+    await runAgent({ officeName: "E", history, client, scheduling: sch.deps });
+    expect(calls[2].tools).not.toContain("marcar_consulta");
+    expect(calls[2].tools).not.toContain("ver_horarios_livres");
+  });
+
+  it("o prompt proíbe inventar datas e exige confirmação explícita", () => {
+    const withAgenda = buildSystemPrompt({ officeName: "X", knowledgeBaseAvailable: false, schedulingAvailable: true, nowIso: "2026-10-27T00:00:00Z" });
+    expect(withAgenda).toContain("confirmar explicitamente");
+    expect(withAgenda).toContain("Nunca inventes datas");
+    const without = buildSystemPrompt({ officeName: "X", knowledgeBaseAvailable: false, nowIso: "2026-10-27T00:00:00Z" });
+    expect(without).toContain("não proponhas datas");
   });
 });

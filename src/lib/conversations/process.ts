@@ -1,5 +1,5 @@
 import "server-only";
-import { runAgent, isAgentConfigured, type HistoryMessage, type KnowledgeHit } from "@/lib/agent/run";
+import { runAgent, isAgentConfigured, type BookingResult, type FreeSlot, type HistoryMessage, type KnowledgeHit } from "@/lib/agent/run";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { providerFor, WhatsAppApiError } from "@/lib/whatsapp/provider";
 
@@ -17,7 +17,7 @@ export async function processConversation(conversationId: string): Promise<
 
   const { data: conv, error } = await admin
     .from("conversations")
-    .select("id, mode, status, organization_id, contact_id, whatsapp_account_id, organizations(name), contacts(phone_e164)")
+    .select("id, mode, status, organization_id, contact_id, whatsapp_account_id, organizations(name, timezone), contacts(phone_e164)")
     .eq("id", conversationId)
     .single();
   if (error || !conv) return { ok: false, error: "conversation_not_found" };
@@ -34,7 +34,8 @@ export async function processConversation(conversationId: string): Promise<
     .filter((m) => m.body)
     .map((m) => ({ author: m.author as HistoryMessage["author"], body: m.body as string }));
 
-  const officeName = (conv.organizations as unknown as { name: string } | null)?.name ?? "o escritório";
+  const office = conv.organizations as unknown as { name: string; timezone: string } | null;
+  const officeName = office?.name ?? "o escritório";
 
   let result: Awaited<ReturnType<typeof runAgent>>;
   try {
@@ -50,6 +51,30 @@ export async function processConversation(conversationId: string): Promise<
         });
         if (searchErr) throw searchErr;
         return (data ?? []) as KnowledgeHit[];
+      },
+      // Agenda real: só horários livres; a marcação é gravada antes de ser anunciada.
+      scheduling: {
+        timezone: office?.timezone ?? "Europe/Lisbon",
+        freeSlots: async () => {
+          const { data, error: slotsErr } = await admin.rpc("agent_free_slots", {
+            p_org: conv.organization_id,
+            p_limit: 6,
+          });
+          if (slotsErr) throw slotsErr;
+          return (data ?? []) as FreeSlot[];
+        },
+        book: async (serviceId, startsAt, fullName) => {
+          const { data, error: bookErr } = await admin
+            .rpc("agent_book_appointment", {
+              p_conversation: conversationId,
+              p_service: serviceId,
+              p_starts_at: startsAt,
+              p_full_name: fullName,
+            })
+            .single<BookingResult>();
+          if (bookErr || !data) throw bookErr ?? new Error("booking_failed");
+          return data;
+        },
       },
     });
   } catch (err) {

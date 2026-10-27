@@ -164,18 +164,89 @@ const SEARCH_TOOL: Anthropic.Tool = {
   },
 };
 
+/** Horário livre devolvido pela base de dados (já filtrado: serviço ativo, sem sobreposições). */
+export type FreeSlot = { service_id: string; service_name: string; starts_at: string; ends_at: string };
+
+export type BookingResult = {
+  appointment_id: string;
+  starts_at: string;
+  ends_at: string;
+  professional_name: string;
+  service_name: string;
+};
+
+export type Scheduling = {
+  timezone: string;
+  freeSlots: () => Promise<FreeSlot[]>;
+  book: (serviceId: string, startsAt: string, fullName: string | null) => Promise<BookingResult>;
+};
+
+const SLOTS_TOOL: Anthropic.Tool = {
+  name: "ver_horarios_livres",
+  description:
+    "Mostra os próximos horários realmente livres para uma consulta no escritório. Devolve identificadores (H1, H2, …) válidos só nesta resposta.",
+  input_schema: { type: "object", properties: {} },
+};
+
+const BOOK_TOOL: Anthropic.Tool = {
+  name: "marcar_consulta",
+  description:
+    "Marca a consulta no horário escolhido. Usa só depois de o contacto confirmar explicitamente o dia e a hora, e só com um identificador devolvido por ver_horarios_livres nesta resposta.",
+  input_schema: {
+    type: "object",
+    properties: {
+      horario: { type: "string", description: "Identificador do horário (ex.: H2)." },
+      nome: { type: "string", description: "Nome do contacto, se o disse." },
+    },
+    required: ["horario"],
+  },
+};
+
+export function formatSlot(slot: Pick<FreeSlot, "starts_at">, timezone: string): string {
+  return new Intl.DateTimeFormat("pt-PT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: timezone,
+  }).format(new Date(slot.starts_at));
+}
+
+const BOOKING_CLAIM = /(?<!não\s)(?<!nao\s)\b(fica|ficou|está|esta|foi)\s+(marcad|agendad|confirmad)/i;
+
+/**
+ * Uma marcação só é anunciada depois de gravada. Se o modelo disser que marcou
+ * sem uma marcação bem-sucedida nesta execução, a resposta é bloqueada.
+ */
+export function enforceBookingClaims(decision: AgentDecision, booked: boolean): AgentDecision {
+  if (booked || !BOOKING_CLAIM.test(decision.reply)) return decision;
+  return {
+    ...decision,
+    decision: "handoff",
+    reply: SAFE_HANDOFF_REPLY,
+    handoff_reason: "O assistente anunciou uma marcação que não foi gravada; precisa de confirmação da equipa.",
+  };
+}
+
 type MessagesClient = { messages: { create: Anthropic["messages"]["create"] } };
+
+const MAX_TOOL_TURNS = 6;
+const MAX_BOOKINGS = 1;
 
 export async function runAgent(input: {
   officeName: string;
   history: HistoryMessage[];
   /** Pesquisa na base jurídica. Sem ela, o assistente não dá respostas jurídicas substantivas. */
   search?: (query: string) => Promise<KnowledgeHit[]>;
+  /** Agenda real do escritório. Sem ela, o assistente não propõe nem marca horários. */
+  scheduling?: Scheduling;
   client?: MessagesClient;
 }): Promise<{
   decision: AgentDecision;
   model: string;
   sources: SourceRecord[];
+  booking: BookingResult | null;
   inputTokens?: number;
   outputTokens?: number;
 }> {
@@ -193,25 +264,37 @@ export async function runAgent(input: {
   const system = buildSystemPrompt({
     officeName: input.officeName,
     knowledgeBaseAvailable: Boolean(input.search),
+    schedulingAvailable: Boolean(input.scheduling),
     nowIso: new Date().toISOString(),
   });
 
   const retrieved = new Map<string, { hit: KnowledgeHit; query: string }>();
   const byChunk = new Map<string, string>();
+  const offered = new Map<string, FreeSlot>();
   let searches = 0;
+  let bookings = 0;
+  let booking: BookingResult | null = null;
   let inputTokens = 0;
   let outputTokens = 0;
   let decision: AgentDecision | null = null;
 
-  for (let turn = 0; turn < MAX_SEARCHES + 2 && !decision; turn++) {
-    const canSearch = Boolean(input.search) && searches < MAX_SEARCHES;
+  for (let turn = 0; turn <= MAX_TOOL_TURNS && !decision; turn++) {
+    const tools: Anthropic.Tool[] = [];
+    if (turn < MAX_TOOL_TURNS) {
+      if (input.search && searches < MAX_SEARCHES) tools.push(SEARCH_TOOL);
+      if (input.scheduling && bookings < MAX_BOOKINGS) tools.push(SLOTS_TOOL);
+      if (input.scheduling && offered.size && bookings < MAX_BOOKINGS) tools.push(BOOK_TOOL);
+    }
+    tools.push(RESPONDER_TOOL);
+    const onlyRespond = tools.length === 1;
+
     const res = await client.messages.create({
       model,
       max_tokens: 900,
       system,
       messages,
-      tools: canSearch ? [SEARCH_TOOL, RESPONDER_TOOL] : [RESPONDER_TOOL],
-      tool_choice: canSearch ? { type: "any" } : { type: "tool", name: "responder" },
+      tools,
+      tool_choice: onlyRespond ? { type: "tool", name: "responder" } : { type: "any" },
     });
     inputTokens += res.usage?.input_tokens ?? 0;
     outputTokens += res.usage?.output_tokens ?? 0;
@@ -225,31 +308,103 @@ export async function runAgent(input: {
       break;
     }
 
-    const searchCalls = toolUses.filter((b) => b.name === "pesquisar_base_juridica");
-    if (!searchCalls.length || !input.search) throw new Error("agent_invalid_output");
+    const allowed = new Set(tools.map((t) => t.name));
+    const calls = toolUses.filter((b) => allowed.has(b.name));
+    if (!calls.length) throw new Error("agent_invalid_output");
 
     messages.push({ role: "assistant", content: res.content });
     const results: Anthropic.ToolResultBlockParam[] = [];
-    for (const call of searchCalls) {
-      searches++;
-      const query = String((call.input as { consulta?: unknown })?.consulta ?? "").slice(0, 300);
-      let hits: KnowledgeHit[] = [];
-      try {
-        hits = query.trim().length >= 2 ? await input.search(query) : [];
-      } catch (err) {
-        console.error("[agent] pesquisa falhou", (err as Error).message);
-        hits = [];
+    for (const call of toolUses) {
+      if (!allowed.has(call.name)) {
+        results.push({ type: "tool_result", tool_use_id: call.id, content: "Ferramenta indisponível.", is_error: true });
+        continue;
       }
-      const numbered = hits.map((hit) => {
-        let ref = byChunk.get(hit.chunk_id);
-        if (!ref) {
-          ref = `F${retrieved.size + 1}`;
-          byChunk.set(hit.chunk_id, ref);
-          retrieved.set(ref, { hit, query });
+
+      if (call.name === "pesquisar_base_juridica" && input.search) {
+        searches++;
+        const query = String((call.input as { consulta?: unknown })?.consulta ?? "").slice(0, 300);
+        let hits: KnowledgeHit[] = [];
+        try {
+          hits = query.trim().length >= 2 ? await input.search(query) : [];
+        } catch (err) {
+          console.error("[agent] pesquisa falhou", (err as Error).message);
+          hits = [];
         }
-        return { ref, hit };
-      });
-      results.push({ type: "tool_result", tool_use_id: call.id, content: formatHits(numbered) });
+        const numbered = hits.map((hit) => {
+          let ref = byChunk.get(hit.chunk_id);
+          if (!ref) {
+            ref = `F${retrieved.size + 1}`;
+            byChunk.set(hit.chunk_id, ref);
+            retrieved.set(ref, { hit, query });
+          }
+          return { ref, hit };
+        });
+        results.push({ type: "tool_result", tool_use_id: call.id, content: formatHits(numbered) });
+        continue;
+      }
+
+      if (call.name === "ver_horarios_livres" && input.scheduling) {
+        let slots: FreeSlot[] = [];
+        try {
+          slots = await input.scheduling.freeSlots();
+        } catch (err) {
+          console.error("[agent] horários falharam", (err as Error).message);
+        }
+        if (!slots.length) {
+          results.push({
+            type: "tool_result",
+            tool_use_id: call.id,
+            content: "Não há horários livres disponíveis neste momento. Não proponhas datas: diz que a equipa entrará em contacto para agendar e encaminha.",
+          });
+          continue;
+        }
+        const lines = slots.map((slot) => {
+          const ref = `H${offered.size + 1}`;
+          offered.set(ref, slot);
+          return `[${ref}] ${formatSlot(slot, input.scheduling!.timezone)} — ${slot.service_name}`;
+        });
+        results.push({
+          type: "tool_result",
+          tool_use_id: call.id,
+          content: `Horários livres (fuso ${input.scheduling.timezone}):\n${lines.join("\n")}`,
+        });
+        continue;
+      }
+
+      if (call.name === "marcar_consulta" && input.scheduling) {
+        bookings++;
+        const args = call.input as { horario?: unknown; nome?: unknown };
+        const slot = offered.get(String(args?.horario ?? ""));
+        if (!slot) {
+          results.push({
+            type: "tool_result",
+            tool_use_id: call.id,
+            content: "Identificador de horário inválido. Nada foi marcado. Só podes usar horários devolvidos por ver_horarios_livres.",
+            is_error: true,
+          });
+          continue;
+        }
+        try {
+          const name = typeof args.nome === "string" && args.nome.trim() ? args.nome.trim().slice(0, 160) : null;
+          booking = await input.scheduling.book(slot.service_id, slot.starts_at, name);
+          results.push({
+            type: "tool_result",
+            tool_use_id: call.id,
+            content: `Marcação GRAVADA: ${booking.service_name}, ${formatSlot(booking, input.scheduling.timezone)}, com ${booking.professional_name}. Podes confirmar ao contacto.`,
+          });
+        } catch (err) {
+          const taken = String((err as Error)?.message ?? "").includes("slot_unavailable");
+          results.push({
+            type: "tool_result",
+            tool_use_id: call.id,
+            content: taken
+              ? "Esse horário acabou de ficar ocupado. Nada foi marcado. Pede desculpa e propõe outros horários."
+              : "Não foi possível marcar. Nada foi marcado. Diz que a equipa vai confirmar a marcação e encaminha.",
+            is_error: true,
+          });
+        }
+        continue;
+      }
     }
     messages.push({ role: "user", content: results });
   }
@@ -257,7 +412,7 @@ export async function runAgent(input: {
   if (!decision) throw new Error("agent_invalid_output");
 
   const lastContact = [...input.history].reverse().find((m) => m.author === "contact")?.body ?? "";
-  const checked = enforceSafety(enforceSources(decision, retrieved), lastContact);
+  const checked = enforceSafety(enforceBookingClaims(enforceSources(decision, retrieved), Boolean(booking)), lastContact);
   const cited = new Set(checked.fontes ?? []);
 
   const sources: SourceRecord[] = [...retrieved.entries()].map(([ref, { hit, query }]) => ({
@@ -272,5 +427,5 @@ export async function runAgent(input: {
     cited: cited.has(ref),
   }));
 
-  return { decision: checked, model, sources, inputTokens, outputTokens };
+  return { decision: checked, model, sources, booking, inputTokens, outputTokens };
 }
