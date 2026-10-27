@@ -146,3 +146,15 @@ export class PermissionError extends Error {
 export function assertCan(ctx: OrgContext, permission: Permission) {
   if (!can(ctx, permission)) throw new PermissionError(permission);
 }
+
+/**
+ * Administrador da plataforma (equipa que opera o produto): gere a base
+ * jurídica comum. Não dá acesso a dados de clientes dos escritórios.
+ */
+export const isPlatformAdmin = cache(async (): Promise<boolean> => {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  const supabase = await createClient();
+  const { data } = await supabase.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  return Boolean(data);
+});

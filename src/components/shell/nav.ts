@@ -51,7 +51,7 @@ export const NAV: NavGroup[] = [
   },
 ];
 
-export const CURRENT_PHASE = 2;
+export const CURRENT_PHASE = 3;
 
 export function navHref(orgSlug: string, item: Pick<NavItem, "segment">) {
   return item.segment ? `/app/${orgSlug}/${item.segment}` : `/app/${orgSlug}`;

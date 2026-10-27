@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  experimental: {
+    // Importação de documentos para a base jurídica (PDF/DOCX até 4 MB).
+    serverActions: { bodySizeLimit: "4.5mb" },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
