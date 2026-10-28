@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { orgAction } from "@/lib/auth/action";
 import type { ActionResult } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
@@ -64,4 +65,37 @@ export async function updateOrgSecurityAction(_: ActionResult | null, form: Form
         : "A verificação em dois passos deixou de ser obrigatória.",
     };
   });
+}
+
+export async function updateRetentionAction(_: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return orgAction(form, "org.update", async (ctx) => {
+    const months = Number(form.get("months"));
+    if (!Number.isInteger(months) || months < 6 || months > 120) {
+      return { ok: false, error: "Escolha um prazo entre 6 e 120 meses.", fieldErrors: { months: "Entre 6 e 120 meses." } };
+    }
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("update_retention", { p_org: ctx.org.id, p_months: months });
+    if (error) throw error;
+    revalidatePath(`/app/${ctx.org.slug}/configuracoes/dados`);
+    return { ok: true, message: "Prazo de conservação guardado. Fica no registo de atividade." };
+  });
+}
+
+export async function deleteOrganizationAction(_: ActionResult | null, form: FormData): Promise<ActionResult> {
+  const result = await orgAction<undefined>(form, "org.delete", async (ctx) => {
+    const confirm = String(form.get("confirm") ?? "");
+    const reason = String(form.get("reason") ?? "").trim().slice(0, 500);
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("delete_organization", { p_org: ctx.org.id, p_confirm_slug: confirm, p_reason: reason || null });
+    if (error) {
+      const m = error.message;
+      if (m.includes("confirmation_mismatch")) return { ok: false, error: "O endereço escrito não corresponde ao do escritório.", fieldErrors: { confirm: "Não corresponde." } };
+      if (m.includes("campaigns_running")) return { ok: false, error: "Há campanhas ativas na Meta. Termine-as primeiro em Campanhas." };
+      if (m.includes("subscription_active")) return { ok: false, error: "Há uma subscrição paga ativa. Cancele-a primeiro em Faturação › Gerir subscrição." };
+      throw error;
+    }
+    return { ok: true };
+  });
+  if (result.ok) redirect("/app?eliminado=1");
+  return result;
 }

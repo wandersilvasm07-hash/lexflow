@@ -37,6 +37,23 @@ export async function processConversation(conversationId: string): Promise<
   const office = conv.organizations as unknown as { name: string; timezone: string } | null;
   const officeName = office?.name ?? "o escritório";
 
+  // Limite do plano / subscrição: sem margem, a conversa passa à equipa sem chamar a IA.
+  const { data: ent } = await admin.rpc("agent_entitlement", { p_org: conv.organization_id });
+  const entitlement = ent as { allowed: boolean; reason?: string } | null;
+  if (entitlement && !entitlement.allowed) {
+    await admin.rpc("record_ai_reply", {
+      p_conversation: conversationId,
+      p_body: null,
+      p_model: "nenhum",
+      p_decision: "handoff",
+      p_handoff_reason:
+        entitlement.reason === "plan_limit:ai_replies_month"
+          ? "Limite mensal de respostas da IA do plano atingido: responda pela caixa de entrada."
+          : "Subscrição inativa: o assistente de IA está em pausa. Responda pela caixa de entrada.",
+    });
+    return { ok: true, skipped: entitlement.reason ?? "not_entitled" };
+  }
+
   let result: Awaited<ReturnType<typeof runAgent>>;
   try {
     result = await runAgent({

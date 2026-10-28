@@ -81,5 +81,17 @@ Plano original:
 - [ ] Revisão da app pela Meta (necessária para outros escritórios ligarem as suas contas)
 - [ ] Formulários instantâneos da Meta; Google Ads (arquitetura preparada)
 
-## Fase 6 — Comercialização
-Planos e limites configuráveis, Stripe, contadores de consumo, onboarding guiado, monitorização de erros, CSP com nonces, backups/PITR, políticas de retenção, exportação/eliminação RGPD, avaliação de transferências internacionais, revisão jurídica de termos e privacidade.
+## Fase 6 — Comercialização 🟡 (código, testes e migração; faltam contas e decisões externas)
+
+- [x] Planos Essencial, Profissional e Premium na base de dados: preços, limites e funcionalidades editáveis pela plataforma (Conta › Administração da plataforma), sem valores no código
+- [x] Teste de 14 dias no Profissional para cada escritório novo
+- [x] Limites aplicados no servidor: membros (com convites pendentes), respostas da IA por mês, propostas de campanha da IA, campanhas em curso, documentos jurídicos (testado, com verificação por mutação)
+- [x] Subscrição inativa: IA e publicação em pausa, dados acessíveis e exportáveis; 7 dias de tolerância em pagamentos em atraso
+- [x] Stripe: Checkout, Portal do Cliente (mudar de plano, cancelar, pagamento, faturas), webhook com assinatura verificada e idempotente; sem dados de cartão no Patrono
+- [x] Página de Faturação: plano, consumo face aos limites, planos, histórico de faturação
+- [x] Onboarding: passos com estado real no dashboard; aviso de subscrição inativa
+- [x] RGPD: retenção configurável com limpeza diária, exportação completa, eliminação do escritório, lista de subcontratantes (ver [PRIVACY.md](PRIVACY.md))
+- [x] CSP, monitorização de erros estruturada, verificação de saúde, região UE
+- [ ] Conta Stripe, produtos/preços e webhook; testar uma subscrição real em modo de teste
+- [ ] Faturação certificada pela AT (os recibos do Stripe não são faturas válidas em Portugal)
+- [ ] Supabase Pro + PITR; DPA com os subcontratantes; revisão jurídica de termos e privacidade; monitorização externa

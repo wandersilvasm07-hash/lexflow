@@ -5,7 +5,7 @@ export default async function SettingsLayout({ children, params }: LayoutProps<"
   const { org } = await params;
   return (
     <>
-      <PageHeader title="Configurações" description="Dados do escritório, segurança e registo de atividade." />
+      <PageHeader title="Configurações" description="Dados do escritório, segurança, registo de atividade e privacidade." />
       <SettingsTabs base={`/app/${org}/configuracoes`} />
       <div className="mt-6">{children}</div>
     </>

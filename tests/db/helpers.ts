@@ -103,3 +103,12 @@ export async function expectPgError(p: Promise<unknown>, match: RegExp | string)
   }
   throw new Error(`Era esperado um erro (${match}) mas a operação teve sucesso`);
 }
+
+/** Muda o plano/estado de um escritório diretamente (como o webhook do Stripe faria). */
+export async function setPlan(orgId: string, plan: string, status = "active") {
+  await pool.query("update public.subscriptions set plan_id = $2, status = $3::public.subscription_status where organization_id = $1", [
+    orgId,
+    plan,
+    status,
+  ]);
+}

@@ -1,12 +1,14 @@
 import { Check } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Badge, Panel, PanelHeader, cn } from "@/components/ui";
+import { Alert, Badge, Panel, PanelHeader, cn } from "@/components/ui";
 import { can, getOrgContext } from "@/lib/auth/dal";
 import { getReport, periodRange, type Report } from "@/lib/data/reports";
 import { getMarketingReport, type MarketingReport } from "@/lib/data/ads";
 import { formatCents } from "@/lib/ads/constants";
 import { createClient } from "@/lib/supabase/server";
+import { getBillingOverview } from "@/lib/data/billing";
+import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -46,7 +48,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
   const range = periodRange(period as "7" | "30" | "90", ctx.org.timezone);
   const headCount = (table: string) =>
     supabase.from(table).select("id", { count: "exact", head: true }).eq("organization_id", ctx.org.id);
-  const [members, invites, factors, report, services, rules, aiRuns, marketing] = await Promise.all([
+  const [members, invites, factors, report, services, rules, aiRuns, marketing, billing] = await Promise.all([
     supabase
       .from("memberships")
       .select("id", { count: "exact", head: true })
@@ -67,6 +69,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
     can(ctx, "reports.read") || can(ctx, "campaigns.read")
       ? getMarketingReport(ctx.org.id, range.fromDay, range.toDay).catch(() => null)
       : Promise.resolve(null),
+    getBillingOverview(ctx.org.id).catch(() => null),
   ]);
   const adsRows = marketing?.campaigns ?? null;
 
@@ -118,10 +121,29 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
       href: `${base}/whatsapp`,
       available: can(ctx, "whatsapp.manage"),
     },
+    {
+      done: billing?.status === "active",
+      title: "Escolher o plano",
+      text: billing?.status === "trialing" && billing.trial_ends_at ? `Teste gratuito até ${formatDate(billing.trial_ends_at)}.` : "Subscrição do escritório.",
+      href: `${base}/faturacao`,
+      available: can(ctx, "billing.manage"),
+    },
   ];
 
   return (
     <>
+      {billing && !billing.active ? (
+        <Alert tone="seal" className="mb-6" title={billing.reason === "trial_expired" ? "O período de teste terminou" : "Subscrição inativa"}>
+          O assistente de IA e a publicação de campanhas estão em pausa; os dados continuam disponíveis.{" "}
+          {can(ctx, "billing.manage") ? (
+            <Link href={`${base}/faturacao`} className="underline underline-offset-2">
+              Escolher um plano
+            </Link>
+          ) : (
+            "Fale com o administrador do escritório."
+          )}
+        </Alert>
+      ) : null}
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">{ctx.org.name}</h1>

@@ -20,6 +20,7 @@ export type OrgRole = (typeof ORG_ROLES)[number];
 export const PERMISSIONS = [
   "org.read",
   "org.update",
+  "org.delete",
   "team.read",
   "team.manage",
   "audit.read",

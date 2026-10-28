@@ -56,3 +56,16 @@ Sem estas variáveis a aplicação continua a funcionar: o modo de simulação m
 Na app da Meta: URL de redirecionamento OAuth válido `https://<app>/api/meta/oauth/callback`; permissões `ads_management`, `ads_read`, `business_management`, `pages_show_list`, `pages_read_engagement`, `pages_manage_ads` (exigem revisão da app pela Meta para uso por outros escritórios).
 
 Sem estas variáveis, as campanhas podem ser preparadas, revistas e aprovadas; a publicação fica indisponível e a interface diz porquê.
+
+## Variáveis da Fase 6 — pagamentos e manutenção
+
+| Variável | Para quê | Obrigatória para |
+|---|---|---|
+| `STRIPE_SECRET_KEY` | Chave secreta do Stripe (`sk_live_…` ou `sk_test_…`) | Subscrições |
+| `STRIPE_WEBHOOK_SECRET` | Segredo do endpoint de webhook (`whsec_…`) | Subscrições |
+| `CRON_SECRET` | Protege `/api/cron/*` (a Vercel envia-o automaticamente nas tarefas agendadas) | Retenção de dados, métricas de anúncios |
+
+No Stripe:
+1. Criar um produto por plano (Essencial, Profissional, Premium) com um preço mensal recorrente; copiar o `price_…` de cada um para Plataforma › Planos no Patrono.
+2. Webhook para `https://<app>/api/webhooks/stripe` com os eventos: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.finalized`, `invoice.paid`, `invoice.payment_failed`, `invoice.voided`.
+3. Ativar o Portal do Cliente (Settings › Billing › Customer portal): permitir mudar de plano entre os três produtos, cancelar no fim do período, atualizar método de pagamento e ver faturas.

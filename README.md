@@ -4,7 +4,7 @@ Plataforma SaaS para escritórios de advocacia em Portugal: atendimento por What
 
 > Nome do produto: **Patrono** (definido em `src/config/app.ts`). O repositório mantém o nome técnico `lexflow`.
 
-**Estado:** Fases 1 a 5 implementadas e testadas (ver detalhes e pendentes em [docs/ROADMAP.md](docs/ROADMAP.md)). Fase 6 (comercialização) por fazer.
+**Estado:** Fases 1 a 6 implementadas e testadas (ver pendentes externos em [docs/ROADMAP.md](docs/ROADMAP.md) e [docs/PRIVACY.md](docs/PRIVACY.md)).
 
 | Documento | Conteúdo |
 |---|---|
@@ -12,6 +12,7 @@ Plataforma SaaS para escritórios de advocacia em Portugal: atendimento por What
 | [docs/DATABASE.md](docs/DATABASE.md) | Esquema atual e desenho das fases seguintes |
 | [docs/CREDENTIALS.md](docs/CREDENTIALS.md) | Serviços externos, credenciais, configuração de email |
 | [docs/ADS.md](docs/ADS.md) | Publicidade: fluxo, controlo financeiro, regras de conteúdo, atribuição |
+| [docs/PRIVACY.md](docs/PRIVACY.md) | Segurança, RGPD, subcontratantes, operação e pendentes antes de produção |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Plano por fases e critérios de aceitação |
 
 ## Requisitos

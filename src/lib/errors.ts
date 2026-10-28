@@ -19,6 +19,15 @@ const KNOWN_DB_ERRORS = [
   "consent_required",
 ] as const;
 
+const PLAN_LIMIT_MESSAGES: Record<string, string> = {
+  members: "O plano atual não permite mais membros (incluindo convites pendentes). Mude de plano em Faturação.",
+  ai_replies_month: "Atingiu o limite mensal de respostas da IA do plano.",
+  ad_generations_month: "Atingiu o limite mensal de propostas de campanha geradas pela IA. Mude de plano em Faturação.",
+  active_campaigns: "O plano atual não permite mais campanhas em curso. Pause ou termine uma, ou mude de plano em Faturação.",
+  knowledge_docs: "O plano atual não permite mais documentos na base jurídica do escritório. Arquive documentos ou mude de plano.",
+  default: "Atingiu um limite do plano atual. Veja os detalhes em Faturação.",
+};
+
 /**
  * Converte erros da base de dados (RPC) e do Supabase Auth em mensagens claras
  * para o utilizador, sem expor detalhes internos.
@@ -29,6 +38,11 @@ export function toUserMessage(error: unknown): string {
   const code = e?.code ?? "";
 
   if (message.includes("rate_limited")) return t.errors.rate_limited;
+  const limit = message.match(/plan_limit:([a-z_]+)/)?.[1];
+  if (limit) return PLAN_LIMIT_MESSAGES[limit] ?? PLAN_LIMIT_MESSAGES.default;
+  if (message.includes("subscription_inactive")) {
+    return "A subscrição do escritório não está ativa. Os dados continuam disponíveis; regularize em Faturação para voltar a usar esta função.";
+  }
   for (const key of KNOWN_DB_ERRORS) {
     if (message.includes(key)) return t.errors[key];
   }

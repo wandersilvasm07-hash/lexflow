@@ -10,6 +10,7 @@ export function SettingsTabs({ base }: { base: string }) {
     { href: base, label: "Escritório" },
     { href: `${base}/seguranca`, label: "Segurança" },
     { href: `${base}/auditoria`, label: "Registo de atividade" },
+    { href: `${base}/dados`, label: "Dados e privacidade" },
   ];
   return (
     <nav aria-label="Secções" className="flex gap-1 overflow-x-auto border-b border-line">

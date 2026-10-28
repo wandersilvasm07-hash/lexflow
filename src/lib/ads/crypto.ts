@@ -52,8 +52,9 @@ export function verifyState<T>(state: string | null): T | null {
   if (!state) return null;
   const [body, sig] = state.split(".");
   if (!body || !sig) return null;
-  const expected = createHmac("sha256", key()).update(body).digest();
-  const got = Buffer.from(sig, "base64url");
+  // Compara a forma textual canónica: qualquer alteração ao texto é rejeitada.
+  const expected = Buffer.from(createHmac("sha256", key()).update(body).digest("base64url"));
+  const got = Buffer.from(sig);
   if (got.length !== expected.length || !timingSafeEqual(got, expected)) return null;
   try {
     const data = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as T & { exp?: number };

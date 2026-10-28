@@ -319,6 +319,29 @@ describe("aprovação explícita", () => {
 describe("publicação idempotente e estado real", () => {
   beforeAll(() => setLimits(2000, 50000, 20000));
 
+  it("plano: campanhas em curso e gerações da IA respeitam os limites; sem subscrição não se publica", async () => {
+    await connectAccount();
+    const id = await readyCampaign(basics({ name: "Limite do plano", locations: ["Porto"] }));
+    await approve(admin, id);
+    await pool.query(
+      `insert into public.plans (id, name, limits, is_public) values ('teste-camp', 'Teste campanhas', '{"active_campaigns": 0, "ad_generations_month": 0}', false)
+       on conflict (id) do update set limits = excluded.limits`,
+    );
+    const prev = (await pool.query("select plan_id from public.subscriptions where organization_id = $1", [org])).rows[0].plan_id;
+    await pool.query("update public.subscriptions set plan_id = 'teste-camp' where organization_id = $1", [org]);
+    try {
+      await expectPgError(asUser(admin, (c) => c.query("select public.request_campaign_publish($1)", [id])), "plan_limit:active_campaigns");
+      await expectPgError(
+        asUser(admin, (c) => c.query("select public.set_campaign_content($1, $2::jsonb, '{}'::jsonb, 'm')", [id, JSON.stringify([ad(0)])])),
+        "plan_limit:ad_generations_month",
+      );
+      await pool.query("update public.subscriptions set plan_id = $2, status = 'canceled' where organization_id = $1", [org, prev]);
+      await expectPgError(asUser(admin, (c) => c.query("select public.request_campaign_publish($1)", [id])), "subscription_inactive");
+    } finally {
+      await pool.query("update public.subscriptions set plan_id = $2, status = 'trialing' where organization_id = $1", [org, prev]);
+    }
+  });
+
   it("sem aprovação não há publicação", async () => {
     const id = await readyCampaign(basics({ name: "Por aprovar" }));
     await expectPgError(asUser(admin, (c) => c.query("select public.request_campaign_publish($1)", [id])), "not_approved");

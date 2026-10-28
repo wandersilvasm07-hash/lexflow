@@ -3,6 +3,7 @@ import {
   addMember,
   asUser,
   createOrg,
+  setPlan,
   createUser,
   expectPgError,
   pool,
@@ -25,6 +26,7 @@ beforeAll(async () => {
   bruno = await createUser("Bruno");
   orgA = await createOrg(alice, "Escritório A");
   orgB = await createOrg(bruno, "Escritório B");
+  await setPlan(orgA, "premium");
 });
 
 afterAll(async () => {

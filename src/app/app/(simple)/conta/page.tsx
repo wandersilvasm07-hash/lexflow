@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Panel, PanelHeader } from "@/components/ui";
-import { requireUser } from "@/lib/auth/dal";
+import { isPlatformAdmin, requireUser } from "@/lib/auth/dal";
 import { ProfileForm } from "./profile-form";
 
 export const metadata: Metadata = { title: "A minha conta" };
 
 export default async function AccountPage() {
   const user = await requireUser("/app/conta");
+  const platform = await isPlatformAdmin();
   return (
     <>
       <Link href="/app" className="text-sm text-muted hover:text-ink">
@@ -32,6 +33,19 @@ export default async function AccountPage() {
             }
           />
         </Panel>
+        {platform ? (
+          <Panel>
+            <PanelHeader
+              title="Administração da plataforma"
+              description="Planos, preços e limites."
+              actions={
+                <Link href="/app/conta/plataforma" className="text-sm font-medium text-ink underline underline-offset-4">
+                  Gerir planos
+                </Link>
+              }
+            />
+          </Panel>
+        ) : null}
       </div>
     </>
   );
