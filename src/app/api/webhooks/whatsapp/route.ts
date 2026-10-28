@@ -69,6 +69,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "ingest_failed" }, { status: 500 });
     }
     if (data?.agent_should_reply && m.supported) toReply.push(data.conversation_id);
+    // Atribuição a campanha só quando a Meta indica o anúncio de origem.
+    if (data && !data.duplicate && m.referral?.sourceType === "ad") {
+      const { data: conv } = await admin.from("conversations").select("contact_id").eq("id", data.conversation_id).single();
+      if (conv?.contact_id) {
+        await admin.rpc("attribute_contact_to_ad", {
+          p_contact: conv.contact_id,
+          p_external_ad_id: m.referral.sourceId,
+          p_details: { ctwa_clid: m.referral.ctwaClid, headline: m.referral.headline },
+        });
+      }
+    }
   }
 
   for (const s of statuses) {
