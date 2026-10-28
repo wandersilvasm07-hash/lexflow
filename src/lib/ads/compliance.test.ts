@@ -52,6 +52,16 @@ describe("revisão de conformidade", () => {
     expect(c).toEqual(expect.arrayContaining(["texto_longo", "titulo_longo", "cta_destino"]));
   });
 
+  it("o briefing da imagem (não publicado) só avisa, mesmo quando lista palavras a evitar", () => {
+    const r = checkCompliance([
+      { primary_text: "Apoio jurídico em reagrupamento familiar.", headline: "Consulta", cta: "WHATSAPP_MESSAGE", image_brief: "Evitar palavras como 'garantido'." },
+    ]);
+    expect(hasBlocking(r)).toBe(false);
+    expect(r.issues.find((i) => i.code === "promessa_resultado")?.severity).toBe("warn");
+    // No texto publicado, a mesma palavra continua a bloquear.
+    expect(hasBlocking(checkCompliance([{ primary_text: "Resultado garantido.", headline: "Consulta", cta: "WHATSAPP_MESSAGE" }]))).toBe(true);
+  });
+
   it("não confunde palavras parecidas", () => {
     expect(codes("Garantimos atendimento em português e inglês.")).toContain("promessa_resultado"); // "garantimos" é promessa
     expect(codes("Atendimento personalizado e confidencial.")).toEqual([]);

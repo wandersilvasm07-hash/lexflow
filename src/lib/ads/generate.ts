@@ -57,7 +57,7 @@ const TOOL: Anthropic.Tool = {
             headline: { type: "string", description: "Título até 40 caracteres." },
             description: { type: "string" },
             cta: { type: "string", enum: Object.keys(CTAS) },
-            image_brief: { type: "string", description: "Briefing da imagem para o designer: o que mostrar e o que evitar." },
+            image_brief: { type: "string", description: "Briefing da imagem para o designer: o que mostrar e o que evitar (sem texto na imagem que prometa resultados). Não cites palavras proibidas entre aspas." },
           },
           required: ["primary_text", "headline", "cta", "image_brief"],
         },

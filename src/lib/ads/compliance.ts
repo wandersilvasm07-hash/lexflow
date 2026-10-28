@@ -15,7 +15,7 @@
  * Não substitui a revisão por um advogado: a aprovação pede essa confirmação.
  */
 
-export const COMPLIANCE_VERSION = "2026-10-27.1";
+export const COMPLIANCE_VERSION = "2026-10-28.1";
 
 export type Severity = "block" | "warn";
 export type ComplianceIssue = { severity: Severity; code: string; message: string; where: string; excerpt?: string };
@@ -148,7 +148,16 @@ export function checkCompliance(ads: AdContent[], opts: { destination?: string; 
       for (const rule of RULES) {
         const m = text.match(rule.pattern);
         if (m) {
-          issues.push({ severity: rule.severity, code: rule.code, message: rule.message, where: `${label} · ${field}`, excerpt: excerpt(text, m) });
+          // O briefing da imagem não é publicado (e costuma listar o que evitar):
+          // serve de aviso para quem cria a imagem, nunca bloqueia.
+          const brief = field === "imagem";
+          issues.push({
+            severity: brief ? "warn" : rule.severity,
+            code: rule.code,
+            message: brief ? `No briefing da imagem (não publicado): confirme que a imagem final não o faz. ${rule.message}` : rule.message,
+            where: `${label} · ${field}`,
+            excerpt: excerpt(text, m),
+          });
         }
       }
     }
