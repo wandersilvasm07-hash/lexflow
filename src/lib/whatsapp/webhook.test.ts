@@ -68,4 +68,13 @@ describe("leitura do payload", () => {
     expect(parseWebhook({ object: "page", entry: [] })).toEqual({ messages: [], statuses: [] });
     expect(parseWebhook(null)).toEqual({ messages: [], statuses: [] });
   });
+
+  it("lê o anúncio de origem (Click to WhatsApp) quando a Meta o indica", () => {
+    const payload = structuredClone(sample);
+    const msg = payload.entry[0].changes[0].value.messages[0] as Record<string, unknown>;
+    msg.referral = { source_id: "120200001", source_type: "ad", source_url: "https://fb.me/x", headline: "Reagrupamento", ctwa_clid: "ARA" };
+    const { messages } = parseWebhook(payload);
+    expect(messages[0].referral).toEqual({ sourceId: "120200001", sourceType: "ad", ctwaClid: "ARA", headline: "Reagrupamento" });
+    expect(messages[1].referral).toBeNull();
+  });
 });

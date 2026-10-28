@@ -39,10 +39,10 @@ export function periodRange(key: PeriodKey, timeZone: string, now = new Date()) 
     const next = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1));
     const iso = (d: Date) => d.toISOString().slice(0, 10);
     const end = key === "mes" ? tomorrow : iso(next);
-    return { from: zonedToIso(iso(first), "00:00", timeZone), to: zonedToIso(end, "00:00", timeZone) };
+    return { from: zonedToIso(iso(first), "00:00", timeZone), to: zonedToIso(end, "00:00", timeZone), fromDay: iso(first), toDay: addDays(end, -1) };
   }
   const days = Number(key);
-  return { from: zonedToIso(addDays(tomorrow, -days), "00:00", timeZone), to: zonedToIso(tomorrow, "00:00", timeZone) };
+  return { from: zonedToIso(addDays(tomorrow, -days), "00:00", timeZone), to: zonedToIso(tomorrow, "00:00", timeZone), fromDay: addDays(tomorrow, -days), toDay: today };
 }
 
 export async function getReport(orgId: string, from: string, to: string): Promise<Report> {

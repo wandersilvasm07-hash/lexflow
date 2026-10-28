@@ -42,3 +42,17 @@ Em *Authentication › Sign In / Providers*: ativar "Confirm email". Em *Multi-F
 | `WHATSAPP_GRAPH_VERSION` | Opcional; versão da Graph API | — |
 
 Sem estas variáveis a aplicação continua a funcionar: o modo de simulação mostra as conversas, e a interface indica claramente o que falta.
+
+## Variáveis da Fase 5 — publicidade (Vercel › Settings › Environment Variables)
+
+| Variável | Para quê | Obrigatória para |
+|---|---|---|
+| `META_APP_ID` | Identificador da app na Meta for Developers (produto "Marketing API" + "Facebook Login for Business") | Ligar contas de anúncios |
+| `META_APP_SECRET` | Segredo da mesma app | Ligar contas de anúncios |
+| `ADS_TOKEN_KEY` | Chave de cifra dos tokens da Meta: 32 bytes em base64 (`openssl rand -base64 32`) | Ligar contas de anúncios |
+| `CRON_SECRET` | Protege a sincronização diária `/api/cron/ads-sync` (a Vercel envia-o automaticamente) | Métricas e alertas automáticos |
+| `META_GRAPH_VERSION` | Opcional; versão da Graph API | — |
+
+Na app da Meta: URL de redirecionamento OAuth válido `https://<app>/api/meta/oauth/callback`; permissões `ads_management`, `ads_read`, `business_management`, `pages_show_list`, `pages_read_engagement`, `pages_manage_ads` (exigem revisão da app pela Meta para uso por outros escritórios).
+
+Sem estas variáveis, as campanhas podem ser preparadas, revistas e aprovadas; a publicação fica indisponível e a interface diz porquê.

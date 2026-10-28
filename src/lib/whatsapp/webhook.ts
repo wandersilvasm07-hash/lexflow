@@ -26,6 +26,16 @@ const messageSchema = z.object({
   timestamp: z.string().regex(/^[0-9]+$/),
   type: z.string(),
   text: z.object({ body: z.string() }).optional(),
+  // Presente quando a conversa começa num anúncio "Click to WhatsApp".
+  referral: z
+    .object({
+      source_id: z.string().max(100).optional(),
+      source_type: z.string().max(40).optional(),
+      source_url: z.string().max(2000).optional(),
+      headline: z.string().max(500).optional(),
+      ctwa_clid: z.string().max(500).optional(),
+    })
+    .optional(),
 });
 
 const statusSchema = z.object({
@@ -59,6 +69,8 @@ export type InboundMessage = {
   body: string;
   profileName: string | null;
   supported: boolean;
+  /** Anúncio de origem (só quando a Meta o indica). */
+  referral: { sourceId: string; sourceType: string; ctwaClid: string | null; headline: string | null } | null;
 };
 
 export type StatusUpdate = {
@@ -110,6 +122,15 @@ export function parseWebhook(payload: unknown): { messages: InboundMessage[]; st
             : `[O contacto enviou ${UNSUPPORTED_LABEL[m.data.type] ?? "um conteúdo"} — ainda não suportado; ver no WhatsApp]`,
           profileName: names.get(m.data.from) ?? null,
           supported: Boolean(isText),
+          referral:
+            m.data.referral?.source_id && m.data.referral.source_type
+              ? {
+                  sourceId: m.data.referral.source_id,
+                  sourceType: m.data.referral.source_type,
+                  ctwaClid: m.data.referral.ctwa_clid ?? null,
+                  headline: m.data.referral.headline ?? null,
+                }
+              : null,
         });
       }
 
