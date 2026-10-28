@@ -5,6 +5,8 @@ import { Alert, PageHeader, Panel, PanelHeader, cn } from "@/components/ui";
 import { can, getOrgContext } from "@/lib/auth/dal";
 import { CONTACT_SOURCE, CONTACT_STATUS, type ContactSource, type ContactStatus } from "@/lib/crm";
 import { PERIODS, getReport, periodRange, type PeriodKey } from "@/lib/data/reports";
+import { getMarketingReport } from "@/lib/data/ads";
+import { formatCents } from "@/lib/ads/constants";
 import { formatDateTime } from "@/lib/format";
 import { t } from "@/i18n";
 
@@ -19,7 +21,10 @@ export default async function ReportsPage({ params, searchParams }: PageProps<"/
 
   const period = (typeof sp.periodo === "string" && sp.periodo in PERIODS ? sp.periodo : "30") as PeriodKey;
   const range = periodRange(period, ctx.org.timezone);
-  const r = await getReport(ctx.org.id, range.from, range.to);
+  const [r, mk] = await Promise.all([
+    getReport(ctx.org.id, range.from, range.to),
+    getMarketingReport(ctx.org.id, range.fromDay, range.toDay).catch(() => null),
+  ]);
   const base = `/app/${slug}/relatorios`;
 
   return (
@@ -103,11 +108,66 @@ export default async function ReportsPage({ params, searchParams }: PageProps<"/
         </Panel>
 
         <Panel>
-          <PanelHeader title="Publicidade" />
-          <p className="px-5 py-4 text-sm text-muted">
-            Investimento, custo por contacto e custo por consulta aparecem quando as campanhas da Meta estiverem ligadas
-            (fase 5). Nessa altura, os números fornecidos pela Meta e os calculados aqui serão mostrados em separado.
-          </p>
+          <PanelHeader
+            title="Publicidade"
+            description="Impressões, cliques, conversas e gasto: fornecidos pela Meta. Contactos, contactos qualificados e consultas: calculados aqui."
+          />
+          {mk && mk.campaigns.length ? (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[48rem] text-left text-sm">
+                  <thead>
+                    <tr className="text-xs text-muted">
+                      <th className="border-b border-line px-5 py-2.5 font-medium">Campanha</th>
+                      <th className="border-b border-line px-3 py-2.5 font-medium">Impressões</th>
+                      <th className="border-b border-line px-3 py-2.5 font-medium">Cliques</th>
+                      <th className="border-b border-line px-3 py-2.5 font-medium">Conversas</th>
+                      <th className="border-b border-line px-3 py-2.5 font-medium">Investimento</th>
+                      <th className="border-b border-line bg-paper px-3 py-2.5 font-medium">Contactos</th>
+                      <th className="border-b border-line bg-paper px-3 py-2.5 font-medium">Qualificados</th>
+                      <th className="border-b border-line bg-paper px-3 py-2.5 font-medium">Consultas</th>
+                      <th className="border-b border-line bg-paper px-3 py-2.5 font-medium">Custo/contacto</th>
+                      <th className="border-b border-line bg-paper px-3 py-2.5 font-medium">Custo/consulta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mk.campaigns.map((c) => (
+                      <tr key={c.id} className="tabular-nums">
+                        <td className="border-b border-line px-5 py-2.5">
+                          <Link href={`/app/${slug}/campanhas/${c.id}`} className="font-medium hover:underline">{c.name}</Link>
+                        </td>
+                        <td className="border-b border-line px-3 py-2.5">{c.impressions.toLocaleString("pt-PT")}</td>
+                        <td className="border-b border-line px-3 py-2.5">{c.clicks.toLocaleString("pt-PT")}</td>
+                        <td className="border-b border-line px-3 py-2.5">{c.conversations_started.toLocaleString("pt-PT")}</td>
+                        <td className="border-b border-line px-3 py-2.5">{formatCents(c.spend_cents)}</td>
+                        <td className="border-b border-line bg-paper px-3 py-2.5">{c.contacts_attributed}</td>
+                        <td className="border-b border-line bg-paper px-3 py-2.5">{c.contacts_qualified}</td>
+                        <td className="border-b border-line bg-paper px-3 py-2.5">{c.appointments_booked}</td>
+                        <td className="border-b border-line bg-paper px-3 py-2.5">{c.contacts_attributed ? formatCents(Math.round(c.spend_cents / c.contacts_attributed)) : "—"}</td>
+                        <td className="border-b border-line bg-paper px-3 py-2.5">{c.appointments_booked ? formatCents(Math.round(c.spend_cents / c.appointments_booked)) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="space-y-1 px-5 py-4 text-xs text-muted">
+                <p>
+                  Atribuição: um contacto conta para a campanha quando a primeira mensagem chega por um anúncio que leva ao WhatsApp (a Meta indica o
+                  anúncio na própria mensagem). Contactos que viram o anúncio e escreveram mais tarde por outro caminho não são atribuídos.
+                </p>
+                <p>“Qualificados” são contactos que chegaram a consulta proposta, marcada ou cliente. As consultas contam pela data em que foram marcadas.</p>
+                {mk.contacts_from_ads_unattributed ? (
+                  <p>{mk.contacts_from_ads_unattributed} contacto(s) marcados como vindos de anúncios não puderam ser ligados a uma campanha concreta.</p>
+                ) : null}
+                <p>Os números da Meta podem ser corrigidos por ela durante alguns dias; são atualizados automaticamente.</p>
+              </div>
+            </>
+          ) : (
+            <p className="px-5 py-4 text-sm text-muted">
+              Sem campanhas publicadas neste período. Os resultados aparecem aqui quando houver campanhas na Meta, com os números da Meta e os
+              calculados pelo Patrono em colunas separadas.
+            </p>
+          )}
         </Panel>
 
         <Alert tone="neutral">

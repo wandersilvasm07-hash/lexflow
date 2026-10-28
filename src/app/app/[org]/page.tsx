@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Badge, Panel, PanelHeader, cn } from "@/components/ui";
 import { can, getOrgContext } from "@/lib/auth/dal";
 import { getReport, periodRange, type Report } from "@/lib/data/reports";
+import { getMarketingReport, type MarketingReport } from "@/lib/data/ads";
+import { formatCents } from "@/lib/ads/constants";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -15,17 +17,24 @@ const PERIODS = [
 ] as const;
 
 /** Indicadores do dashboard, de onde vêm e (quando já existem) o valor calculado. */
-const METRICS: { label: string; source: string; value?: (r: Report) => number }[] = [
+type Ads = MarketingReport["campaigns"];
+const sum = (a: Ads, k: "spend_cents" | "contacts_attributed") => a.reduce((t, c) => t + c[k], 0);
+
+const METRICS: { label: string; source: string; value?: (r: Report) => number; ads?: (a: Ads) => string | null }[] = [
   { label: "Novas conversas", source: "WhatsApp", value: (r) => r.conversations_new },
   { label: "Atendidas pela IA", source: "WhatsApp", value: (r) => r.conversations_ai_attended },
   { label: "Pendentes agora", source: "Caixa de entrada", value: (r) => r.conversations_pending_now },
   { label: "Encaminhadas para humanos", source: "Caixa de entrada", value: (r) => r.conversations_handed_off },
   { label: "Novos potenciais clientes", source: "Contactos", value: (r) => r.contacts_new },
   { label: "Consultas marcadas", source: "Agenda", value: (r) => r.appointments_booked },
-  { label: "Campanhas ativas", source: "Meta Ads (fase 5)" },
-  { label: "Investimento publicitário", source: "Meta Ads (fase 5)" },
-  { label: "Contactos vindos de anúncios", source: "Meta Ads (fase 5)" },
-  { label: "Custo por contacto", source: "Meta Ads (fase 5)" },
+  { label: "Campanhas ativas", source: "Campanhas", ads: (a) => String(a.filter((c) => c.status === "active").length) },
+  { label: "Investimento publicitário", source: "Meta", ads: (a) => (a.length ? formatCents(sum(a, "spend_cents")) : null) },
+  { label: "Contactos vindos de anúncios", source: "Contactos", ads: (a) => (a.length ? String(sum(a, "contacts_attributed")) : null) },
+  {
+    label: "Custo por contacto",
+    source: "Calculado",
+    ads: (a) => (sum(a, "contacts_attributed") ? formatCents(Math.round(sum(a, "spend_cents") / sum(a, "contacts_attributed"))) : null),
+  },
 ];
 
 export default async function DashboardPage({ params, searchParams }: PageProps<"/app/[org]">) {
@@ -37,7 +46,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
   const range = periodRange(period as "7" | "30" | "90", ctx.org.timezone);
   const headCount = (table: string) =>
     supabase.from(table).select("id", { count: "exact", head: true }).eq("organization_id", ctx.org.id);
-  const [members, invites, factors, report, services, rules, aiRuns] = await Promise.all([
+  const [members, invites, factors, report, services, rules, aiRuns, marketing] = await Promise.all([
     supabase
       .from("memberships")
       .select("id", { count: "exact", head: true })
@@ -55,7 +64,11 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
     can(ctx, "calendar.read") ? headCount("services") : Promise.resolve({ count: 0 }),
     can(ctx, "calendar.read") ? headCount("availability_rules") : Promise.resolve({ count: 0 }),
     can(ctx, "conversations.read") ? headCount("agent_runs").neq("decision", "error") : Promise.resolve({ count: 0 }),
+    can(ctx, "reports.read") || can(ctx, "campaigns.read")
+      ? getMarketingReport(ctx.org.id, range.fromDay, range.toDay).catch(() => null)
+      : Promise.resolve(null),
   ]);
+  const adsRows = marketing?.campaigns ?? null;
 
   const profileComplete = Boolean(ctx.org.legal_name && ctx.org.nif && ctx.org.email);
   const teamStarted = (members.count ?? 0) > 1 || (invites.count ?? 0) > 0;
@@ -140,7 +153,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
             title={`Indicadores · últimos ${period} dias`}
             description={
               report
-                ? "Calculados a partir das conversas, contactos e agenda do escritório. Os indicadores de publicidade chegam com a ligação à Meta."
+                ? "Calculados a partir das conversas, contactos e agenda do escritório. O investimento vem da Meta; aparece “—” enquanto não houver campanhas publicadas."
                 : "O seu papel não inclui relatórios. Os indicadores ficam visíveis para quem tem acesso a relatórios."
             }
           />
@@ -158,6 +171,8 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
                 <dd className="mt-1 flex items-baseline justify-between gap-2">
                   {report && m.value ? (
                     <span className="text-xl font-semibold tabular-nums">{m.value(report).toLocaleString("pt-PT")}</span>
+                  ) : adsRows && m.ads && m.ads(adsRows) !== null ? (
+                    <span className="text-xl font-semibold tabular-nums">{m.ads(adsRows)}</span>
                   ) : (
                     <span className="text-xl font-semibold text-line-strong" aria-label="Sem dados">
                       —

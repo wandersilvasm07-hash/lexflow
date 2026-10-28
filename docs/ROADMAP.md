@@ -67,8 +67,19 @@ Plano original:
 - [ ] Integração com Google Calendar / Outlook (prevista; fora desta fase)
 - [ ] Lembretes de consulta por WhatsApp (exigem modelos aprovados pela Meta)
 
-## Fase 5 — Publicidade
-Assistente de campanha (13 passos), revisão de conformidade, pré-visualização, aprovação explícita registada, publicação idempotente na Meta, confirmação do estado real, limites e alertas de orçamento, relatórios com atribuição e limitações declaradas.
+## Fase 5 — Publicidade 🟡 (código, testes e migração; falta ligar uma conta Meta real)
+
+- [x] Assistente de campanha em 13 passos (ver [ADS.md](ADS.md)); plano, textos, variantes e briefing de imagens pela IA, com estimativas identificadas
+- [x] A IA nunca altera o orçamento; limites do escritório verificados na base de dados ao criar, alterar, aprovar e publicar (testado)
+- [x] Revisão de conformidade determinística (publicidade enganosa, segredo profissional, angariação, temas políticos/sociais na Meta UE); bloqueios impedem a aprovação
+- [x] Pré-visualização; aprovação explícita registada com impressão digital do conteúdo e do orçamento; qualquer alteração anula a aprovação (testado)
+- [x] Publicação idempotente e retomável; tudo criado em pausa e ativado no fim; teto de gasto também na Meta; sem duplicação (testado)
+- [x] Pausar, retomar, terminar com confirmação do estado real; sincronização diária; alerta de consumo e pausa ao atingir o total
+- [x] Imagens privadas (armazenamento com acesso temporário); token da Meta cifrado (AES-256-GCM)
+- [x] Relatórios: números da Meta separados dos calculados; atribuição por anúncio clique-para-WhatsApp, com limitações declaradas
+- [ ] Criar a app na Meta for Developers, configurar variáveis e testar com uma conta de anúncios real
+- [ ] Revisão da app pela Meta (necessária para outros escritórios ligarem as suas contas)
+- [ ] Formulários instantâneos da Meta; Google Ads (arquitetura preparada)
 
 ## Fase 6 — Comercialização
 Planos e limites configuráveis, Stripe, contadores de consumo, onboarding guiado, monitorização de erros, CSP com nonces, backups/PITR, políticas de retenção, exportação/eliminação RGPD, avaliação de transferências internacionais, revisão jurídica de termos e privacidade.
