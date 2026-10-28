@@ -155,7 +155,7 @@ export function CampaignBasicsForm({
               <label
                 key={k}
                 className={cn(
-                  "flex cursor-pointer gap-3 rounded-md border border-line-strong p-3 text-sm has-[:checked]:border-ink has-[:checked]:bg-ink-faint",
+                  "flex cursor-pointer gap-3 rounded-control border border-line-strong p-3 text-sm has-[:checked]:border-ink has-[:checked]:bg-ink-faint",
                   disabled && "cursor-not-allowed opacity-50",
                 )}
               >
@@ -236,7 +236,7 @@ export function CampaignBasicsForm({
                 <label
                   key={k}
                   className={cn(
-                    "flex cursor-pointer items-center gap-2 rounded-md border border-line-strong p-3 text-sm has-[:checked]:border-ink has-[:checked]:bg-ink-faint",
+                    "flex cursor-pointer items-center gap-2 rounded-control border border-line-strong p-3 text-sm has-[:checked]:border-ink has-[:checked]:bg-ink-faint",
                     disabled && "cursor-not-allowed opacity-50",
                   )}
                 >
@@ -294,7 +294,7 @@ export function AdsEditor({ org, id, ads, editable }: { org: string; id: string;
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="count" value={ads.length} />
       {ads.map((a, i) => (
-        <fieldset key={a.position} className="space-y-3 rounded-md border border-line p-4">
+        <fieldset key={a.position} className="space-y-3 rounded-control border border-line p-4">
           <legend className="px-1 text-sm font-semibold">Anúncio {String.fromCharCode(65 + i)}</legend>
           <input type="hidden" name={`image_path_${i}`} value={a.image_path ?? ""} />
           <Field id={`primary_text_${i}`} label="Texto principal" error={fe[`primary_text_${i}`]} hint="Até 125 caracteres aparece completo no telemóvel.">
@@ -406,7 +406,7 @@ export function Improvements({ org, id }: { org: string; id: string }) {
       {state && state.ok && state.data ? (
         <div className="space-y-2">
           <p className="text-xs text-muted">{state.message}</p>
-          <div className="whitespace-pre-wrap rounded-md border border-line bg-paper p-4 text-sm">{state.data}</div>
+          <div className="whitespace-pre-wrap rounded-control border border-line bg-paper p-4 text-sm">{state.data}</div>
         </div>
       ) : (
         <FormMessage state={state as ActionResult | null} />

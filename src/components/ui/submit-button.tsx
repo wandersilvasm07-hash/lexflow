@@ -13,7 +13,14 @@ export function SubmitButton({
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending || props.disabled} aria-busy={pending} {...props}>
-      {pending ? (pendingLabel ?? "A guardar…") : children}
+      {pending ? (
+        <>
+          <span className="size-3.5 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true" />
+          {pendingLabel ?? "A guardar…"}
+        </>
+      ) : (
+        children
+      )}
     </Button>
   );
 }

@@ -135,7 +135,7 @@ export function BookForm({
                     {g.slots.map((s) => (
                       <label
                         key={s.value}
-                        className="cursor-pointer rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-white"
+                        className="cursor-pointer rounded-control border border-line-strong bg-surface px-3 py-1.5 text-sm has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-white"
                       >
                         <input type="radio" name="slot" value={s.value} className="sr-only" required />
                         {s.time}
@@ -148,7 +148,7 @@ export function BookForm({
             </div>
           </fieldset>
         ) : (
-          <p className="rounded-md border border-line bg-paper px-4 py-3 text-sm text-muted">
+          <p className="rounded-control border border-line bg-paper px-4 py-3 text-sm text-muted">
             Não há horários livres nestes dias. Escolha outro dia, outro profissional, ou marque fora do horário.
           </p>
         )
@@ -294,7 +294,7 @@ export function RuleForm({ org, user }: { org: string; user: string }) {
             <label
               key={d}
               className={cn(
-                "cursor-pointer rounded-md border border-line-strong px-2.5 py-1 text-xs has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-white",
+                "cursor-pointer rounded-control border border-line-strong px-2.5 py-1 text-xs has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-white",
               )}
             >
               <input type="checkbox" name="weekday" value={i + 1} defaultChecked={i < 5} className="sr-only" />

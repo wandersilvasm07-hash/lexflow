@@ -1,40 +1,58 @@
 @import "tailwindcss";
 @import "@fontsource-variable/schibsted-grotesk";
+@import "@fontsource-variable/inter";
 
 /*
- * Sistema visual Patrono
- * - Verde-tinta (cor dos selos e carimbos oficiais) para estrutura e ações.
- * - Papel frio, não creme: documentos administrativos, não papelaria.
- * - Lacre (vermelho de selo) só para o que exige atenção humana: urgências,
- *   encaminhamentos e ações destrutivas.
- * Fonte auto-alojada (sem pedidos ao Google Fonts — RGPD).
+ * Identidade visual Patrono
+ * - Azul-petróleo institucional como cor dominante (estrutura, ações, marca).
+ * - Dourado discreto apenas como detalhe: símbolo, item ativo, destaques pontuais.
+ * - Fundo marfim neutro, superfícies brancas, bordas finas, sombras mínimas.
+ * - Cores semânticas sóbrias, afinadas para conviver com o petróleo.
+ * - Tipografia: Inter para leitura; Schibsted Grotesk para títulos e marca.
+ *   Ambas auto-alojadas (sem pedidos ao Google Fonts — RGPD).
  */
 :root {
   color-scheme: light;
-  --ink: #15302a;
-  --ink-soft: #234a40;
-  --ink-faint: #e3ece8;
-  --paper: #f4f6f5;
-  --surface: #ffffff;
-  --line: #d9e1dd;
-  --line-strong: #b9c6c0;
-  --text: #16201c;
-  --muted: #56645e;
-  --seal: #a3362a;
-  --seal-faint: #f8e9e6;
-  --ok: #2b6a3f;
-  --ok-faint: #e5f1e8;
-  --warn: #8a5a00;
-  --warn-faint: #fbf1dc;
-  --focus: #2f7d69;
+  /* Marca */
+  --ink: #142b3b; /* azul-petróleo institucional */
+  --ink-soft: #203f50; /* azul profundo secundário */
+  --ink-faint: #e9eff2; /* petróleo muito claro: seleção, fundos de destaque */
+  --gold: #d8bd83; /* dourado discreto */
+  --gold-deep: #8a6d35; /* dourado legível sobre claro (texto pequeno) */
+  /* Neutros */
+  --paper: #f5f4f0; /* fundo principal */
+  --surface: #ffffff; /* superfícies e cartões */
+  --subtle: #fafaf8; /* cabeçalhos de tabela, zonas secundárias */
+  --line: #e2e5e8; /* bordas e divisórias */
+  --line-strong: #cdd3d8; /* bordas de controlos */
+  --text: #202a33; /* texto principal */
+  --muted: #66717d; /* texto secundário */
+  /* Semânticas */
+  --seal: #a33b32; /* erro / ação destrutiva */
+  --seal-faint: #f9ecea;
+  --ok: #2e6a4f;
+  --ok-faint: #e8f2ec;
+  --warn: #8a5e12;
+  --warn-faint: #fbf3e1;
+  --info: #2c5a78;
+  --info-faint: #e9f1f7;
+  --focus: #2c5a78;
+  /* Forma */
+  --pt-radius-control: 0.5rem;
+  --pt-radius-card: 0.75rem;
+  --pt-shadow-card: 0 1px 2px rgb(20 43 59 / 0.05);
+  --pt-shadow-pop: 0 10px 28px rgb(20 43 59 / 0.12), 0 2px 6px rgb(20 43 59 / 0.06);
 }
 
 @theme inline {
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
   --color-paper: var(--paper);
   --color-surface: var(--surface);
+  --color-subtle: var(--subtle);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-text: var(--text);
@@ -45,20 +63,27 @@
   --color-ok-faint: var(--ok-faint);
   --color-warn: var(--warn);
   --color-warn-faint: var(--warn-faint);
+  --color-info: var(--info);
+  --color-info-faint: var(--info-faint);
   --color-focus: var(--focus);
-  --font-sans: "Schibsted Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Schibsted Grotesk Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: var(--pt-shadow-card);
+  --shadow-pop: var(--pt-shadow-pop);
+  --radius-control: var(--pt-radius-control);
+  --radius-card: var(--pt-radius-card);
 
-  /* Escala tipográfica (razão ~1.25) */
-  --text-xs: 0.8125rem;
-  --text-xs--line-height: 1.25rem;
-  --text-sm: 0.9375rem;
-  --text-sm--line-height: 1.4rem;
-  --text-base: 1.0625rem;
-  --text-base--line-height: 1.6rem;
-  --text-lg: 1.3125rem;
-  --text-lg--line-height: 1.8rem;
-  --text-xl: 1.75rem;
-  --text-xl--line-height: 2.15rem;
+  /* Escala tipográfica: leitura confortável em jornadas longas */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.375rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.625rem;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 2rem;
   --text-2xl: 2.5rem;
   --text-2xl--line-height: 2.8rem;
   --text-3xl: 3.75rem;
@@ -73,12 +98,31 @@ body {
   background: var(--paper);
   color: var(--text);
   font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--ink-faint);
+  color: var(--ink);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -210,8 +210,8 @@ export default function LandingPage() {
                 key={p.name}
                 className={
                   i === 1
-                    ? "rounded-lg border-2 border-ink p-6"
-                    : "rounded-lg border border-line p-6"
+                    ? "rounded-card border-2 border-ink p-6"
+                    : "rounded-card border border-line p-6"
                 }
               >
                 <h3 className="text-lg font-semibold">{p.name}</h3>
@@ -300,7 +300,7 @@ function ConversationIllustration() {
           <Bubble from="client">Sim, até março de 2027.</Bubble>
           <Bubble from="assistant">Obrigado. A sua família está em Portugal ou no país de origem?</Bubble>
         </div>
-        <div className="mt-4 rounded-lg border-l-4 border-seal bg-surface px-4 py-3">
+        <div className="mt-4 rounded-card border-l-4 border-seal bg-surface px-4 py-3">
           <p className="text-xs font-semibold text-seal">Encaminhado para a equipa</p>
           <p className="mt-1 text-sm">
             Pedido de reagrupamento familiar. Título válido até 03/2027. Cônjuge e dois filhos fora de
@@ -318,8 +318,8 @@ function Bubble({ from, children }: { from: "client" | "assistant"; children: Re
     <p
       className={
         from === "client"
-          ? "ml-auto max-w-[85%] rounded-lg rounded-br-sm bg-ink-faint px-3 py-2"
-          : "max-w-[85%] rounded-lg rounded-bl-sm border border-line bg-surface px-3 py-2"
+          ? "ml-auto max-w-[85%] rounded-card rounded-br-sm bg-ink-faint px-3 py-2"
+          : "max-w-[85%] rounded-card rounded-bl-sm border border-line bg-surface px-3 py-2"
       }
     >
       {children}

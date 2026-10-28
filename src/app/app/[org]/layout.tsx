@@ -49,7 +49,7 @@ function ShellSkeleton() {
         <div className="h-16 border-b border-line" />
         <div className="mx-auto max-w-6xl space-y-4 px-6 py-8">
           <div className="h-7 w-48 animate-pulse rounded bg-line" />
-          <div className="h-32 animate-pulse rounded-lg bg-line/60" />
+          <div className="h-32 animate-pulse rounded-card bg-line/60" />
         </div>
       </div>
     </div>

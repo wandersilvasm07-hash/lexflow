@@ -34,7 +34,7 @@ export function CreateOrgForm() {
         error={e?.slug}
         hint="Letras minúsculas, números e hífenes. Não pode ser alterado depois."
       >
-        <div className="flex items-center rounded-md border border-line-strong bg-paper focus-within:border-ink">
+        <div className="flex items-center rounded-control border border-line-strong bg-paper focus-within:border-ink">
           <span className="pl-3 text-sm text-muted">/app/</span>
           <Input
             {...describedBy("slug", e?.slug, true)}

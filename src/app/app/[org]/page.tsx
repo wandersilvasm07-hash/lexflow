@@ -130,7 +130,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
             situação do escritório.
           </p>
         </div>
-        <nav aria-label="Período" className="flex rounded-md border border-line bg-surface p-0.5">
+        <nav aria-label="Período" className="flex rounded-control border border-line bg-surface p-0.5">
           {PERIODS.map((p) => (
             <Link
               key={p.value}
@@ -170,9 +170,9 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
                 <dt className="text-sm text-muted">{m.label}</dt>
                 <dd className="mt-1 flex items-baseline justify-between gap-2">
                   {report && m.value ? (
-                    <span className="text-xl font-semibold tabular-nums">{m.value(report).toLocaleString("pt-PT")}</span>
+                    <span className="font-display text-[1.625rem] leading-none font-semibold tracking-tight text-ink tabular-nums">{m.value(report).toLocaleString("pt-PT")}</span>
                   ) : adsRows && m.ads && m.ads(adsRows) !== null ? (
-                    <span className="text-xl font-semibold tabular-nums">{m.ads(adsRows)}</span>
+                    <span className="font-display text-[1.625rem] leading-none font-semibold tracking-tight text-ink tabular-nums">{m.ads(adsRows)}</span>
                   ) : (
                     <span className="text-xl font-semibold text-line-strong" aria-label="Sem dados">
                       —

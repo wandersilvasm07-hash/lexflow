@@ -152,7 +152,7 @@ export default async function CampaignPage({ params, searchParams }: PageProps<"
               {editable ? (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {ads.map((a, i) => (
-                    <div key={a.id} className="rounded-md border border-line p-3">
+                    <div key={a.id} className="rounded-control border border-line p-3">
                       <p className="mb-2 text-sm font-semibold">Imagem do anúncio {String.fromCharCode(65 + i)}</p>
                       {a.image_path && images[a.image_path] ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -185,7 +185,7 @@ export default async function CampaignPage({ params, searchParams }: PageProps<"
               ) : (
                 <ul className="space-y-2">
                   {issues.map((it, i) => (
-                    <li key={i} className={cn("rounded-md border p-3 text-sm", it.severity === "block" ? "border-seal/30 bg-seal-faint" : "border-warn/30 bg-warn-faint")}>
+                    <li key={i} className={cn("rounded-control border p-3 text-sm", it.severity === "block" ? "border-seal/30 bg-seal-faint" : "border-warn/30 bg-warn-faint")}>
                       <p className="font-medium">
                         {it.severity === "block" ? "Impede a aprovação" : "A rever"} · {it.where}
                       </p>
@@ -209,7 +209,7 @@ export default async function CampaignPage({ params, searchParams }: PageProps<"
           {ads.length ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {ads.map((a, i) => (
-                <figure key={a.id} className="overflow-hidden rounded-lg border border-line bg-surface shadow-sm">
+                <figure key={a.id} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
                   <figcaption className="sr-only">Pré-visualização do anúncio {String.fromCharCode(65 + i)}</figcaption>
                   <div className="flex items-center gap-2 px-3 py-2">
                     <span className="flex size-8 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">{ctx.org.name.slice(0, 1)}</span>

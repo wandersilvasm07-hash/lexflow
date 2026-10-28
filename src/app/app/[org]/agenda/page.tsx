@@ -116,7 +116,7 @@ export default async function AgendaWeekPage({ params, searchParams }: PageProps
               <section
                 key={d}
                 aria-label={`${WEEKDAYS[i]} ${d}`}
-                className={cn("rounded-lg border bg-surface", isToday ? "border-ink" : "border-line", !list.length && "hidden lg:block")}
+                className={cn("rounded-card border bg-surface", isToday ? "border-ink" : "border-line", !list.length && "hidden lg:block")}
               >
                 <h2 className="border-b border-line px-3 py-2 text-xs font-medium">
                   {WEEKDAYS[i]} <span className="text-muted">{dayFmt.format(new Date(`${d}T00:00:00Z`))}</span>
@@ -128,7 +128,7 @@ export default async function AgendaWeekPage({ params, searchParams }: PageProps
                     return (
                       <li
                         key={a.id}
-                        className={cn("rounded-md border border-line p-2 text-xs", closed && "opacity-60", a.status === "cancelled" && "line-through")}
+                        className={cn("rounded-control border border-line p-2 text-xs", closed && "opacity-60", a.status === "cancelled" && "line-through")}
                       >
                         <p className="font-semibold">
                           {timeFmt.format(new Date(a.starts_at))}–{timeFmt.format(new Date(a.ends_at))}

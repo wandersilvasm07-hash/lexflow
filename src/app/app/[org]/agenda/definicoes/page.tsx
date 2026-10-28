@@ -92,7 +92,7 @@ export default async function AgendaSettingsPage({ params }: PageProps<"/app/[or
                   {mine.length ? (
                     <ul className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
                       {mine.map((r) => (
-                        <li key={r.id} className="flex items-center justify-between gap-2 rounded-md bg-paper px-3 py-1.5">
+                        <li key={r.id} className="flex items-center justify-between gap-2 rounded-control bg-paper px-3 py-1.5">
                           <span>
                             {WEEKDAYS[r.weekday - 1]}, {hhmm(r.start_time)}–{hhmm(r.end_time)}
                           </span>

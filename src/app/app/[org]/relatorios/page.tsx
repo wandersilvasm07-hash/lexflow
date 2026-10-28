@@ -40,7 +40,7 @@ export default async function ReportsPage({ params, searchParams }: PageProps<"/
             href={`${base}?periodo=${k}`}
             aria-current={k === period ? "true" : undefined}
             className={cn(
-              "rounded-md border px-3 py-1.5 text-sm",
+              "rounded-control border px-3 py-1.5 text-sm",
               k === period ? "border-ink bg-ink text-white" : "border-line-strong bg-surface text-muted hover:text-ink",
             )}
           >
@@ -185,7 +185,7 @@ function Stats({ items }: { items: { label: string; value: number; note?: string
       {items.map((it) => (
         <div key={it.label} className="bg-surface px-5 py-4">
           <dt className="text-sm text-muted">{it.label}</dt>
-          <dd className="mt-1 text-2xl font-semibold tabular-nums">{it.value.toLocaleString("pt-PT")}</dd>
+          <dd className="mt-1.5 font-display text-[1.625rem] leading-none font-semibold tracking-tight text-ink tabular-nums">{it.value.toLocaleString("pt-PT")}</dd>
           {it.note ? <dd className="mt-0.5 text-xs text-muted">{it.note}</dd> : null}
         </div>
       ))}

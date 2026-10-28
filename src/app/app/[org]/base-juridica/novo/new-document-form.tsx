@@ -37,7 +37,7 @@ export function NewDocumentForm({ org, canCommon }: { org: string; canCommon: bo
               aria-checked={method === m.key}
               onClick={() => setMethod(m.key)}
               className={cn(
-                "rounded-md border px-4 py-3 text-left",
+                "rounded-control border px-4 py-3 text-left",
                 method === m.key ? "border-ink bg-ink-faint" : "border-line-strong bg-surface hover:border-muted",
               )}
             >
@@ -54,7 +54,7 @@ export function NewDocumentForm({ org, canCommon }: { org: string; canCommon: bo
                 {...describedBy("file", e?.file)}
                 type="file"
                 accept=".pdf,.docx,.html,.htm,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/html,text/plain"
-                className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-line-strong file:bg-surface file:px-3 file:py-2 file:text-sm"
+                className="block w-full text-sm file:mr-3 file:rounded-control file:border file:border-line-strong file:bg-surface file:px-3 file:py-2 file:text-sm"
               />
             </Field>
           ) : method === "url" ? (

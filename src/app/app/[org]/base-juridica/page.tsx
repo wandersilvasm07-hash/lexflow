@@ -129,7 +129,7 @@ export default async function KnowledgePage({ params, searchParams }: PageProps<
             ))}
           </Select>
         </label>
-        <button type="submit" className="h-10 rounded-md border border-line-strong bg-surface px-4 text-sm hover:border-ink">
+        <button type="submit" className="h-10 rounded-control border border-line-strong bg-surface px-4 text-sm hover:border-ink">
           Filtrar
         </button>
       </form>

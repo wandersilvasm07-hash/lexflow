@@ -1,36 +1,45 @@
 import { APP } from "@/config/app";
 import { cn } from "@/components/ui";
 
-/** Marca: um selo circular com a inicial P, em verde-tinta. */
-export function Logo({ inverted = false, className }: { inverted?: boolean; className?: string }) {
+/**
+ * Símbolo Patrono: um P geométrico — haste vertical e bojo em meia-lua, este
+ * a dourado — dentro de um quadrado de cantos suaves em azul-petróleo.
+ * Funciona de 16 px (favicon) a tamanhos grandes; sem elementos jurídicos literais.
+ */
+export function LogoMark({ inverted = false, className }: { inverted?: boolean; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      <svg viewBox="0 0 32 32" className="size-7" aria-hidden="true">
-        <circle
-          cx="16"
-          cy="16"
-          r="13.5"
-          fill="none"
-          stroke={inverted ? "#ffffff" : "var(--ink)"}
-          strokeWidth="2"
-        />
-        <path
-          d="M12.5 22V10h4.5a3.5 3.5 0 0 1 0 7h-4.5"
-          fill="none"
-          stroke={inverted ? "#ffffff" : "var(--ink)"}
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <span
-        className={cn(
-          "text-[1.05rem] font-semibold tracking-tight",
-          inverted ? "text-white" : "text-ink",
-        )}
-      >
-        {APP.name}
-      </span>
+    <svg viewBox="0 0 32 32" className={cn("size-8 shrink-0", className)} aria-hidden="true">
+      <rect width="32" height="32" rx="8" fill={inverted ? "#203F50" : "var(--ink)"} />
+      <rect x="10" y="8" width="4" height="16" rx="1" fill="#FFFFFF" />
+      <path d="M14 8h3.5a6 6 0 0 1 0 12H14z" fill="#D8BD83" />
+    </svg>
+  );
+}
+
+export function Logo({
+  inverted = false,
+  compact = false,
+  className,
+}: {
+  inverted?: boolean;
+  compact?: boolean;
+  className?: string;
+}) {
+  return (
+    <span className={cn("inline-flex items-center gap-2.5", className)}>
+      <LogoMark inverted={inverted} />
+      {compact ? (
+        <span className="sr-only">{APP.name}</span>
+      ) : (
+        <span
+          className={cn(
+            "font-display text-[1.0625rem] font-semibold tracking-[0.16em] uppercase",
+            inverted ? "text-white" : "text-ink",
+          )}
+        >
+          {APP.name}
+        </span>
+      )}
     </span>
   );
 }

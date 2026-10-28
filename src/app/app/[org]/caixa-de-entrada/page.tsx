@@ -328,7 +328,7 @@ async function ConversationView({ ctx, id, backHref }: { ctx: OrgContext; id: st
               <li key={m.id} className={cn("flex", m.direction === "inbound" ? "justify-start" : "justify-end")}>
                 <div
                   className={cn(
-                    "max-w-[85%] rounded-lg px-3 py-2 text-sm",
+                    "max-w-[85%] rounded-card px-3 py-2 text-sm",
                     m.direction === "inbound" ? "bg-ink-faint" : m.author === "ai" ? "border border-line bg-surface" : "bg-ink text-white",
                   )}
                 >

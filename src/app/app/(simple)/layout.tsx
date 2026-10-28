@@ -18,7 +18,7 @@ export default function SimpleLayout({ children }: LayoutProps<"/app">) {
         </form>
       </header>
       <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8">
-        <Suspense fallback={<div className="h-40 animate-pulse rounded-lg bg-line/60" aria-busy="true" />}>
+        <Suspense fallback={<div className="h-40 animate-pulse rounded-card bg-line/60" aria-busy="true" />}>
           {children}
         </Suspense>
       </main>

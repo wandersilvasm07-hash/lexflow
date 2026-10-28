@@ -38,12 +38,12 @@ export function AppShell({ org, orgs, allowed, user, signOut, children }: ShellP
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-ink text-white transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-ink text-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         )}
         aria-label="Navegação principal"
       >
-        <div className="flex h-16 items-center justify-between px-5">
+        <div className="flex h-16 items-center justify-between border-b border-white/[0.06] px-5">
           <Link href={`/app/${org.slug}`}>
             <Logo inverted />
           </Link>
@@ -58,14 +58,14 @@ export function AppShell({ org, orgs, allowed, user, signOut, children }: ShellP
 
         <OrgSwitcher current={org} orgs={orgs} />
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-6">
+        <nav className="flex-1 overflow-y-auto px-3 pb-6" aria-label="Módulos">
           {NAV.map((group, gi) => {
             const items = group.items.filter((i) => allowed.includes(i.key));
             if (items.length === 0) return null;
             return (
-              <div key={gi} className="mt-5 first:mt-3">
+              <div key={gi} className="mt-6 first:mt-4">
                 {group.label ? (
-                  <p className="mb-1 px-2 text-xs text-white/45">{group.label}</p>
+                  <p className="mb-1.5 px-3 text-[0.6875rem] font-medium tracking-[0.12em] text-white/40 uppercase">{group.label}</p>
                 ) : null}
                 <ul className="space-y-0.5">
                   {items.map((item) => {
@@ -81,20 +81,17 @@ export function AppShell({ org, orgs, allowed, user, signOut, children }: ShellP
                           onClick={() => setOpen(false)}
                           aria-current={active ? "page" : undefined}
                           className={cn(
-                            "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
+                            "relative flex items-center gap-3 rounded-control px-3 py-2 text-sm transition-colors",
                             active
-                              ? "bg-white text-ink"
-                              : "text-white/80 hover:bg-white/10 hover:text-white",
+                              ? "bg-white/[0.08] font-medium text-white before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-r-full before:bg-gold"
+                              : "text-white/70 hover:bg-white/[0.05] hover:text-white",
                           )}
                         >
-                          <Icon className="size-4 shrink-0" aria-hidden="true" />
+                          <Icon className={cn("size-[1.05rem] shrink-0", active ? "text-gold" : "text-white/55")} aria-hidden="true" />
                           <span className="flex-1">{t.nav[item.key]}</span>
                           {item.phase > CURRENT_PHASE ? (
                             <span
-                              className={cn(
-                                "text-[0.7rem]",
-                                active ? "text-muted" : "text-white/40",
-                              )}
+                              className="rounded-full border border-white/15 px-1.5 text-[0.625rem] text-white/45"
                               title={`Disponível na fase ${item.phase} do desenvolvimento`}
                             >
                               F{item.phase}
@@ -112,7 +109,7 @@ export function AppShell({ org, orgs, allowed, user, signOut, children }: ShellP
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-paper/95 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-surface/95 px-4 backdrop-blur sm:px-8">
           <button
             className="-ml-1 rounded p-1.5 text-ink lg:hidden"
             onClick={() => setOpen(true)}
@@ -127,7 +124,7 @@ export function AppShell({ org, orgs, allowed, user, signOut, children }: ShellP
             <UserMenu user={user} roleLabel={org.roleLabel} signOut={signOut} />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-7 sm:px-8 lg:py-10">{children}</main>
       </div>
     </div>
   );
@@ -141,21 +138,21 @@ function OrgSwitcher({ current, orgs }: { current: OrgOption & { roleLabel: stri
     <>
       <span className="min-w-0 flex-1 text-left">
         <span className="block truncate text-sm font-medium">{current.name}</span>
-        <span className="block text-xs text-white/55">{current.roleLabel}</span>
+        <span className="block text-xs text-gold/80">{current.roleLabel}</span>
       </span>
       {others.length ? <ChevronsUpDown className="size-4 text-white/50" aria-hidden="true" /> : null}
     </>
   );
 
   if (!others.length) {
-    return <div className="mx-3 flex items-center gap-2 rounded-md border border-white/15 px-3 py-2">{body}</div>;
+    return <div className="mx-3 mt-4 flex items-center gap-2 rounded-control bg-white/[0.05] px-3 py-2.5">{body}</div>;
   }
   return (
-    <details className="group relative mx-3">
-      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md border border-white/15 px-3 py-2 hover:bg-white/5">
+    <details className="group relative mx-3 mt-4">
+      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-control bg-white/[0.05] px-3 py-2.5 hover:bg-white/[0.09]">
         {body}
       </summary>
-      <ul className="absolute inset-x-0 top-full z-10 mt-1 rounded-md border border-line bg-surface py-1 text-text shadow-lg">
+      <ul className="absolute inset-x-0 top-full z-10 mt-1 rounded-control border border-line bg-surface py-1 text-text shadow-pop">
         {others.map((o) => (
           <li key={o.slug}>
             <Link href={`/app/${o.slug}`} className="block truncate px-3 py-2 text-sm hover:bg-paper">
@@ -207,10 +204,10 @@ function ModuleSearch({ orgSlug, allowed }: { orgSlug: string; allowed: NavKey[]
         placeholder="Ir para…"
         aria-label="Pesquisar módulos"
         aria-controls={listId}
-        className="h-9 w-full rounded-md border border-line bg-surface pr-3 pl-9 text-sm placeholder:text-muted/80 focus:border-ink focus:outline-none"
+        className="h-9 w-full rounded-control border border-line bg-subtle pr-3 pl-9 text-sm placeholder:text-muted/80 focus:border-ink/40 focus:bg-surface focus:ring-3 focus:ring-ink/10 focus:outline-none"
       />
       {focused && q ? (
-        <ul id={listId} className="absolute inset-x-0 top-full mt-1 rounded-md border border-line bg-surface py-1 shadow-lg">
+        <ul id={listId} className="absolute inset-x-0 top-full mt-1 rounded-control border border-line bg-surface py-1 shadow-pop">
           {results.length ? (
             results.map((i) => (
               <li key={i.key}>
@@ -250,11 +247,11 @@ function Popover({ button, label, children }: { button: ReactNode; label: string
     <details ref={ref} className="relative">
       <summary
         aria-label={label}
-        className="flex cursor-pointer list-none items-center rounded-md p-2 text-ink hover:bg-ink-faint"
+        className="flex cursor-pointer list-none items-center rounded-control p-2 text-muted hover:bg-ink-faint hover:text-ink"
       >
         {button}
       </summary>
-      <div className="absolute right-0 z-30 mt-1 w-72 rounded-md border border-line bg-surface shadow-lg">
+      <div className="absolute right-0 z-30 mt-2 w-72 rounded-card border border-line bg-surface shadow-pop">
         {children}
       </div>
     </details>
@@ -292,7 +289,7 @@ function UserMenu({
     <Popover
       label="Conta"
       button={
-        <span className="flex size-8 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">
+        <span className="flex size-8 items-center justify-center rounded-full bg-ink-faint text-xs font-semibold text-ink ring-1 ring-ink/10">
           {initials || <UserRound className="size-4" />}
         </span>
       }
